@@ -12,7 +12,7 @@ try {
 
   await nextApp.prepare();
 
-  const { createApp } = await import("./be/dist/app.js");
+  const { createApp } = await import("./be/dist/src/app.js");
   const app = createApp({ enableNotFound: false });
 
   app.all("*", (req, res) => handle(req, res));
