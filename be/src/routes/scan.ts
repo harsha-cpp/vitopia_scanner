@@ -182,7 +182,6 @@ router.post(
             code: result.reason.toUpperCase(),
             checkedInAt: result.checkedInAt,
             checkedInBy: result.checkedInBy,
-            checkedInGate: result.checkedInGate,
             responseTime: Date.now() - startTime,
           });
         }

@@ -141,7 +141,6 @@ export const checkIn = mutation({
         reason: "already_used",
         checkedInAt: order.checkedInAt,
         checkedInBy: order.checkedInBy,
-        checkedInGate: order.checkedInGate,
       };
     }
 
@@ -150,7 +149,6 @@ export const checkIn = mutation({
       checkedIn: true,
       checkedInAt: Date.now(),
       checkedInBy: args.scannedBy,
-      checkedInGate: args.gate,
       updatedAt: Date.now(),
     });
 
@@ -253,5 +251,97 @@ export const getScanLogs = query({
       .take(args.limit ?? 100);
 
     return logs;
+  },
+});
+
+// Adjust Vitopia seed data and return Day1 orders
+export const adjustVitopiaSeed = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const day1Name = "Vitopia2026-Day1";
+    const day2Name = "Vitopia2026-Day2";
+
+    const day1Event = await ctx.db
+      .query("events")
+      .filter((q) => q.eq(q.field("name"), day1Name))
+      .first();
+    const day2Event = await ctx.db
+      .query("events")
+      .filter((q) => q.eq(q.field("name"), day2Name))
+      .first();
+
+    if (!day1Event || !day2Event) {
+      throw new Error("Vitopia events not found");
+    }
+
+    // Update event prices
+    await ctx.db.patch(day1Event._id, { price: 700 });
+    await ctx.db.patch(day2Event._id, { price: 700 });
+
+    const updateOrdersForEvent = async (eventId, shouldCheckIn) => {
+      const orders = await ctx.db
+        .query("orders")
+        .withIndex("by_eventId", (q) => q.eq("eventId", eventId))
+        .collect();
+
+      for (const order of orders) {
+        const patch = {
+          totalAmount: 700,
+          paymentStatus: "paid",
+          updatedAt: Date.now(),
+        };
+
+        if (shouldCheckIn) {
+          patch.checkedIn = true;
+          patch.checkedInAt = Date.now();
+          patch.checkedInBy = "seed";
+        }
+
+        const { _id, _creationTime, checkedInGate, ...rest } = order;
+        await ctx.db.replace(_id, {
+          ...rest,
+          ...patch,
+        });
+      }
+    };
+
+    await updateOrdersForEvent(day1Event._id, true);
+    await updateOrdersForEvent(day2Event._id, false);
+
+    // Remove college field for all VIT-AP seeded users
+    const users = await ctx.db.query("users").collect();
+    for (const user of users) {
+      if (user.email.endsWith("@vitapstudent.ac.in")) {
+        const { _id, _creationTime, college, phone, ...rest } = user;
+        await ctx.db.replace(_id, rest);
+      }
+    }
+
+    // Return first 50 day1 orders with user info
+    const day1Orders = await ctx.db
+      .query("orders")
+      .withIndex("by_eventId", (q) => q.eq("eventId", day1Event._id))
+      .order("desc")
+      .take(50);
+
+    const enriched = await Promise.all(
+      day1Orders.map(async (order) => {
+        const user = await ctx.db.get(order.userId);
+        return {
+          orderId: order.orderId,
+          eventId: order.eventId,
+          userId: order.userId,
+          quantity: order.quantity,
+          name: user?.name || "",
+          email: user?.email || "",
+        };
+      })
+    );
+
+    return {
+      day1EventId: day1Event._id,
+      day2EventId: day2Event._id,
+      day1Orders: enriched,
+    };
   },
 });

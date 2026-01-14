@@ -90,3 +90,176 @@ export const getOrders = query({
     return enrichedOrders;
   },
 });
+
+// Seed demo users and orders for Vitopia 2026
+export const seedVitopia = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const firstNames = [
+      "Aarav",
+      "Aditi",
+      "Akash",
+      "Akhila",
+      "Ameya",
+      "Ananya",
+      "Arjun",
+      "Bhavya",
+      "Chaitra",
+      "Dev",
+      "Divya",
+      "Eshan",
+      "Gauri",
+      "Harsha",
+      "Ishita",
+      "Karthik",
+      "Kavya",
+      "Lakshay",
+      "Meera",
+      "Nikhil",
+      "Pranav",
+      "Priya",
+      "Rahul",
+      "Riya",
+      "Saanvi",
+      "Sai",
+      "Sakshi",
+      "Sameer",
+      "Shreya",
+      "Tanvi",
+      "Varun",
+      "Ved",
+      "Vikram",
+      "Yash",
+    ];
+
+    const lastNames = [
+      "Agarwal",
+      "Bhat",
+      "Chopra",
+      "Das",
+      "Desai",
+      "Gupta",
+      "Iyer",
+      "Jain",
+      "Kapoor",
+      "Kulkarni",
+      "Menon",
+      "Mishra",
+      "Nair",
+      "Patel",
+      "Rao",
+      "Reddy",
+      "Saxena",
+      "Sharma",
+      "Singh",
+      "Verma",
+    ];
+
+    const randomFrom = (list) => list[Math.floor(Math.random() * list.length)];
+    const randomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+
+    const generateOrderId = () => {
+      const timestamp = Date.now().toString(36);
+      const random = Math.random().toString(36).substring(2, 8);
+      return `ORD-${timestamp}-${random}`.toUpperCase();
+    };
+
+    const ensureEvent = async (name, description, dateOffsetDays) => {
+      const existing = await ctx.db
+        .query("events")
+        .filter((q) => q.eq(q.field("name"), name))
+        .first();
+
+      if (existing) return existing;
+
+      const eventId = await ctx.db.insert("events", {
+        name,
+        description,
+        date: Date.now() + dateOffsetDays * 24 * 60 * 60 * 1000,
+        venue: "VIT-AP Campus",
+        capacity: 500,
+        price: 0,
+        isActive: true,
+        createdAt: Date.now(),
+      });
+
+      return await ctx.db.get(eventId);
+    };
+
+    const day1Event = await ensureEvent(
+      "Vitopia2026-Day1",
+      "VITopia 2026 - Day 1",
+      1
+    );
+    const day2Event = await ensureEvent(
+      "Vitopia2026-Day2",
+      "VITopia 2026 - Day 2",
+      2
+    );
+
+    const usedEmails = new Set();
+
+    const createUserAndOrder = async (event, count) => {
+      let created = 0;
+
+      while (created < count) {
+        const first = randomFrom(firstNames);
+        const last = randomFrom(lastNames);
+        const name = `${first} ${last}`;
+        const nameToken = `${first}${last}`.toLowerCase();
+        const year = randomInt(20, 25);
+        const roll = randomInt(1000, 9999);
+        const email = `${year}bce${roll}.${nameToken}@vitapstudent.ac.in`;
+
+        if (usedEmails.has(email)) {
+          continue;
+        }
+        usedEmails.add(email);
+
+        let user = await ctx.db
+          .query("users")
+          .withIndex("by_email", (q) => q.eq("email", email))
+          .first();
+
+        if (!user) {
+          const userId = await ctx.db.insert("users", {
+            email,
+            name,
+            college: "VIT-AP",
+            createdAt: Date.now(),
+          });
+          user = await ctx.db.get(userId);
+        }
+
+        if (!user) continue;
+
+        const orderId = generateOrderId();
+        await ctx.db.insert("orders", {
+          orderId,
+          userId: user._id,
+          eventId: event._id,
+          quantity: 1,
+          totalAmount: event.price,
+          paymentStatus: "paid",
+          checkedIn: false,
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        });
+
+        created += 1;
+      }
+
+      return created;
+    };
+
+    const day1Orders = await createUserAndOrder(day1Event, 50);
+    const day2Orders = await createUserAndOrder(day2Event, 25);
+
+    return {
+      day1EventId: day1Event._id,
+      day2EventId: day2Event._id,
+      day1Orders,
+      day2Orders,
+    };
+  },
+});

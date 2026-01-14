@@ -154,7 +154,6 @@ export interface ScanResult {
   };
   checkedInAt?: number;
   checkedInBy?: string;
-  checkedInGate?: string;
   responseTime?: number;
 }
 
