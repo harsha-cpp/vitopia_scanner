@@ -99,3 +99,26 @@ export const getStats = query({
     };
   },
 });
+
+// Update Vitopia event dates to 22 Feb and 23 Feb 2026
+export const fixVitopiaDates = mutation({
+  args: {},
+  handler: async (ctx) => {
+    // 22 Feb 2026 00:00 UTC
+    const day1Date = new Date("2026-02-22T00:00:00Z").getTime();
+    // 23 Feb 2026 00:00 UTC
+    const day2Date = new Date("2026-02-23T00:00:00Z").getTime();
+
+    const events = await ctx.db.query("events").collect();
+
+    for (const event of events) {
+      if (event.name === "Vitopia2026-Day1") {
+        await ctx.db.patch(event._id, { date: day1Date });
+      } else if (event.name === "Vitopia2026-Day2") {
+        await ctx.db.patch(event._id, { date: day2Date });
+      }
+    }
+
+    return { day1Date, day2Date };
+  },
+});

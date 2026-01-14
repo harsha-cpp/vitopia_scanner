@@ -316,18 +316,6 @@ export default function Home() {
               )}
             </div>
           )}
-
-          {/* Gate ID Input */}
-          <div className="mt-8 bg-[#0a0a0a] border border-[#1a1a1a] rounded-xl p-4">
-            <label className="block text-sm text-[#99A1AF] mb-2">Gate ID</label>
-            <input
-              type="text"
-              value={gateId}
-              onChange={(e) => setGateId(e.target.value)}
-              className="w-full px-4 py-2 bg-black border border-[#1a1a1a] rounded-lg text-white focus:border-[#9AE600] focus:outline-none transition-colors"
-              placeholder="Enter gate identifier"
-            />
-          </div>
         </main>
 
         {/* Footer */}
