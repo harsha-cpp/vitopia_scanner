@@ -2,7 +2,7 @@
 import { Router, Request, Response } from "express";
 import { ConvexHttpClient } from "convex/browser";
 
-const router = Router();
+const router: Router = Router();
 
 // Lazy-load Convex client
 let _convex: ConvexHttpClient | null = null;

@@ -4,7 +4,7 @@ import { getRedisLockManager } from "../utils/redis-lock.js";
 import { verifyQRCode } from "../utils/qr-code.js";
 import { gateAuthMiddleware, rateLimitMiddleware } from "../middleware/auth.js";
 
-const router = Router();
+const router: Router = Router();
 
 // Lazy-load Convex client (env vars not available at import time)
 let _convex: ConvexHttpClient | null = null;

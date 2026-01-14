@@ -2,7 +2,7 @@ import { Router, Request, Response } from "express";
 import { ConvexHttpClient } from "convex/browser";
 import { generateQRCode } from "../utils/qr-code.js";
 
-const router = Router();
+const router: Router = Router();
 
 // Lazy-load Convex client
 let _convex: ConvexHttpClient | null = null;
@@ -125,7 +125,7 @@ router.get("/:orderId", async (req: Request, res: Response) => {
     }
 
     // Generate QR code if paid
-    let qrCode = null;
+    let qrCode: string | null = null;
     if (order.paymentStatus === "paid") {
       qrCode = generateQRCode({
         orderId: order.orderId,
