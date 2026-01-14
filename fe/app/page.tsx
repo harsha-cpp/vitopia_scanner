@@ -11,10 +11,20 @@ import {
   RefreshCw,
   Volume2,
   VolumeX,
+  Calendar,
+  ArrowLeft,
 } from "lucide-react";
+import { BrowserQRCodeReader, IScannerControls } from "@zxing/browser";
 import { verifyTicket, ScanResult, getEvents, Event } from "@/lib/api";
 
 type ScanStatus = "idle" | "scanning" | "success" | "error" | "already_used";
+
+// Helper to format event name nicely
+function formatEventName(name: string): string {
+  if (name === "Vitopia2026-Day1") return "Vitopia Day 1";
+  if (name === "Vitopia2026-Day2") return "Vitopia Day 2";
+  return name;
+}
 
 export default function Home() {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -24,22 +34,31 @@ export default function Home() {
   const [status, setStatus] = useState<ScanStatus>("idle");
   const [lastResult, setLastResult] = useState<ScanResult | null>(null);
   const [gateId, setGateId] = useState("gate-1");
-  const [selectedEventId, setSelectedEventId] = useState<string>("");
+  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [events, setEvents] = useState<Event[]>([]);
+  const [loading, setLoading] = useState(true);
   const [soundEnabled, setSoundEnabled] = useState(true);
-  const [showSettings, setShowSettings] = useState(false);
   const [scanCount, setScanCount] = useState({ success: 0, failed: 0 });
   const lastScannedRef = useRef<string>("");
   const scanTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const barcodeReaderRef = useRef<BrowserQRCodeReader | null>(null);
+  const scannerControlsRef = useRef<IScannerControls | null>(null);
+  const statusRef = useRef<ScanStatus>("idle");
 
   // Load events on mount
   useEffect(() => {
     loadEvents();
   }, []);
 
+  useEffect(() => {
+    statusRef.current = status;
+  }, [status]);
+
   async function loadEvents() {
+    setLoading(true);
     const data = await getEvents();
     setEvents(data);
+    setLoading(false);
   }
 
   // Start camera
@@ -69,6 +88,9 @@ export default function Home() {
 
   // Stop camera
   const stopCamera = useCallback(() => {
+    scannerControlsRef.current?.stop();
+    scannerControlsRef.current = null;
+
     if (stream) {
       stream.getTracks().forEach((track) => track.stop());
       setStream(null);
@@ -77,47 +99,52 @@ export default function Home() {
     setStatus("idle");
   }, [stream]);
 
-  // Scan QR code from video frame
-  const scanFrame = useCallback(async () => {
-    if (!videoRef.current || !canvasRef.current || !scanning) return;
+  useEffect(() => {
+    if (!scanning || !videoRef.current) return;
 
     const video = videoRef.current;
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
 
-    if (!ctx || video.readyState !== video.HAVE_ENOUGH_DATA) return;
+    if (!barcodeReaderRef.current) {
+      barcodeReaderRef.current = new BrowserQRCodeReader();
+    }
 
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    let isActive = true;
 
-    try {
-      if ("BarcodeDetector" in window) {
-        const barcodeDetector = new (window as any).BarcodeDetector({
-          formats: ["qr_code"],
-        });
-        const barcodes = await barcodeDetector.detect(canvas);
+    const startDecode = async () => {
+      try {
+        const controls = await barcodeReaderRef.current!.decodeFromVideoElement(video, (result) => {
+          if (!isActive || !result) return;
+          if (statusRef.current !== "idle") return;
 
-        if (barcodes.length > 0) {
-          const qrCode = barcodes[0].rawValue;
-
+          const qrCode = result.getText();
           if (qrCode !== lastScannedRef.current) {
             lastScannedRef.current = qrCode;
-            await handleQRCodeDetected(qrCode);
+            void handleQRCodeDetected(qrCode);
           }
-        }
+        });
+
+        scannerControlsRef.current = controls;
+      } catch (error) {
+        if (!isActive) return;
+        console.error("QR scanner error:", error);
       }
-    } catch {
-      // Silently fail - will retry on next frame
-    }
-  }, [scanning, gateId, selectedEventId]);
+    };
+
+    startDecode();
+
+    return () => {
+      isActive = false;
+      scannerControlsRef.current?.stop();
+      scannerControlsRef.current = null;
+    };
+  }, [scanning, selectedEvent, gateId]);
 
   // Handle detected QR code
   const handleQRCodeDetected = async (qrCode: string) => {
     setStatus("scanning");
 
     try {
-      const result = await verifyTicket(qrCode, gateId, selectedEventId || undefined);
+      const result = await verifyTicket(qrCode, gateId, selectedEvent?._id || undefined);
       setLastResult(result);
 
       if (result.success) {
@@ -190,31 +217,13 @@ export default function Home() {
     setManualInput("");
   };
 
-  // Continuous scanning loop
-  useEffect(() => {
-    let animationId: number;
-
-    const loop = () => {
-      if (scanning && status === "idle") {
-        scanFrame();
-      }
-      animationId = requestAnimationFrame(loop);
-    };
-
-    if (scanning) {
-      animationId = requestAnimationFrame(loop);
-    }
-
-    return () => {
-      if (animationId) {
-        cancelAnimationFrame(animationId);
-      }
-    };
-  }, [scanning, status, scanFrame]);
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
+      scannerControlsRef.current?.stop();
+      scannerControlsRef.current = null;
+
       if (stream) {
         stream.getTracks().forEach((track) => track.stop());
       }
@@ -224,73 +233,142 @@ export default function Home() {
     };
   }, [stream]);
 
+  // Go back to event selection
+  const handleBackToEvents = () => {
+    stopCamera();
+    setSelectedEvent(null);
+    setScanCount({ success: 0, failed: 0 });
+    setLastResult(null);
+  };
+
+  // ============ EVENT SELECTION SCREEN ============
+  if (!selectedEvent) {
+    return (
+      <div className="min-h-screen bg-black text-white flex flex-col">
+        {/* Header */}
+        <header className="border-b border-[#1a1a1a] bg-black/90 backdrop-blur-sm">
+          <div className="max-w-lg mx-auto px-4 py-6 flex justify-center">
+            <Image
+              src="https://vitopia.vitap.ac.in/_next/image?url=%2Fvitopia-color.webp&w=256&q=75"
+              alt="VITopia"
+              width={180}
+              height={60}
+              className="h-12 w-auto"
+              unoptimized
+            />
+          </div>
+        </header>
+
+        <main className="flex-1 max-w-lg mx-auto w-full px-4 py-8 flex flex-col">
+          {/* Title */}
+          <div className="text-center mb-8">
+            <h1 className="text-2xl font-bold font-heading text-white mb-2">Entry Scanner</h1>
+            <p className="text-[#99A1AF]">Select an event to start scanning</p>
+          </div>
+
+          {/* Loading state */}
+          {loading && (
+            <div className="flex-1 flex items-center justify-center">
+              <div className="animate-pulse text-[#9AE600]">Loading events...</div>
+            </div>
+          )}
+
+          {/* Event Cards */}
+          {!loading && (
+            <div className="space-y-4">
+              {events.map((event) => (
+                <button
+                  key={event._id}
+                  onClick={() => setSelectedEvent(event)}
+                  className="w-full bg-[#0a0a0a] border border-[#1a1a1a] rounded-2xl p-6 text-left hover:border-[#9AE600] hover:bg-[#0f0f0f] transition-all group"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <Calendar className="w-5 h-5 text-[#9AE600]" />
+                        <h2 className="text-xl font-bold text-white group-hover:text-[#9AE600] transition-colors">
+                          {formatEventName(event.name)}
+                        </h2>
+                      </div>
+                      <p className="text-[#99A1AF] text-sm mb-3">{event.description}</p>
+                      <div className="flex items-center gap-4 text-sm">
+                        <span className="text-[#99A1AF]">
+                          {new Date(event.date).toLocaleDateString("en-IN", {
+                            day: "numeric",
+                            month: "short",
+                            year: "numeric",
+                          })}
+                        </span>
+                        <span className="text-[#9AE600]">{event.venue}</span>
+                      </div>
+                    </div>
+                    <div className="ml-4 p-3 rounded-full bg-[#1a1a1a] group-hover:bg-[#9AE600] transition-colors">
+                      <Camera className="w-6 h-6 text-[#9AE600] group-hover:text-black transition-colors" />
+                    </div>
+                  </div>
+                </button>
+              ))}
+
+              {events.length === 0 && (
+                <div className="text-center py-12 text-[#99A1AF]">
+                  <p>No events available</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Gate ID Input */}
+          <div className="mt-8 bg-[#0a0a0a] border border-[#1a1a1a] rounded-xl p-4">
+            <label className="block text-sm text-[#99A1AF] mb-2">Gate ID</label>
+            <input
+              type="text"
+              value={gateId}
+              onChange={(e) => setGateId(e.target.value)}
+              className="w-full px-4 py-2 bg-black border border-[#1a1a1a] rounded-lg text-white focus:border-[#9AE600] focus:outline-none transition-colors"
+              placeholder="Enter gate identifier"
+            />
+          </div>
+        </main>
+
+        {/* Footer */}
+        <footer className="border-t border-[#1a1a1a] py-4">
+          <div className="max-w-lg mx-auto px-4 text-center text-[#99A1AF] text-sm">
+            <p>VITopia &apos;26 Entry Scanner</p>
+          </div>
+        </footer>
+      </div>
+    );
+  }
+
+  // ============ SCANNER SCREEN ============
   return (
     <div className="min-h-screen bg-black text-white flex flex-col">
       {/* Header */}
       <header className="border-b border-[#1a1a1a] bg-black/90 backdrop-blur-sm sticky top-0 z-50">
         <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Image
-              src="https://vitopia.vitap.ac.in/_next/image?url=%2Fvitopia-color.webp&w=256&q=75"
-              alt="VITopia"
-              width={120}
-              height={40}
-              className="h-8 w-auto"
-              unoptimized
-            />
-          </div>
-          <div className="flex items-center gap-2">
             <button
-              onClick={() => setSoundEnabled(!soundEnabled)}
+              onClick={handleBackToEvents}
               className="p-2 hover:bg-[#1a1a1a] rounded-lg transition-colors"
-              title={soundEnabled ? "Mute sounds" : "Enable sounds"}
             >
-              {soundEnabled ? <Volume2 className="w-5 h-5 text-[#9AE600]" /> : <VolumeX className="w-5 h-5 text-[#99A1AF]" />}
+              <ArrowLeft className="w-5 h-5 text-[#9AE600]" />
             </button>
-            <button
-              onClick={() => setShowSettings(!showSettings)}
-              className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
-                showSettings ? "bg-[#9AE600] text-black" : "bg-[#1a1a1a] text-[#99A1AF] hover:text-white"
-              }`}
-            >
-              Settings
-            </button>
+            <div>
+              <h1 className="text-lg font-bold text-white">{formatEventName(selectedEvent.name)}</h1>
+              <p className="text-xs text-[#99A1AF]">{selectedEvent.venue}</p>
+            </div>
           </div>
+          <button
+            onClick={() => setSoundEnabled(!soundEnabled)}
+            className="p-2 hover:bg-[#1a1a1a] rounded-lg transition-colors"
+            title={soundEnabled ? "Mute sounds" : "Enable sounds"}
+          >
+            {soundEnabled ? <Volume2 className="w-5 h-5 text-[#9AE600]" /> : <VolumeX className="w-5 h-5 text-[#99A1AF]" />}
+          </button>
         </div>
       </header>
 
       <main className="flex-1 max-w-lg mx-auto w-full px-4 py-6 flex flex-col">
-        {/* Settings Panel */}
-        {showSettings && (
-          <div className="bg-[#0a0a0a] border border-[#1a1a1a] rounded-xl p-4 mb-6 space-y-4">
-            <div>
-              <label className="block text-sm text-[#99A1AF] mb-2">Gate ID</label>
-              <input
-                type="text"
-                value={gateId}
-                onChange={(e) => setGateId(e.target.value)}
-                className="w-full px-4 py-2 bg-black border border-[#1a1a1a] rounded-lg text-white focus:border-[#9AE600] focus:outline-none transition-colors"
-                placeholder="Enter gate identifier"
-              />
-            </div>
-            <div>
-              <label className="block text-sm text-[#99A1AF] mb-2">Event Filter</label>
-              <select
-                value={selectedEventId}
-                onChange={(e) => setSelectedEventId(e.target.value)}
-                className="w-full px-4 py-2 bg-black border border-[#1a1a1a] rounded-lg text-white focus:border-[#9AE600] focus:outline-none transition-colors"
-              >
-                <option value="">All Events</option>
-                {events.map((event) => (
-                  <option key={event._id} value={event._id}>
-                    {event.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-        )}
-
         {/* Scan Stats */}
         <div className="flex gap-4 mb-6">
           <div className="flex-1 bg-[#0a0a0a] border border-[#1a1a1a] rounded-xl p-4 text-center">

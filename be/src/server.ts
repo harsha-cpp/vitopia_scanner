@@ -1,52 +1,7 @@
-import express from "express";
-import cors from "cors";
-import dotenv from "dotenv";
+import { createApp } from "./app.js";
 
-// Load environment variables
-dotenv.config();
-
-// Import routes
-import scanRoutes from "./routes/scan.js";
-import eventsRoutes from "./routes/events.js";
-import ordersRoutes from "./routes/orders.js";
-import usersRoutes from "./routes/users.js";
-import { errorHandler } from "./middleware/auth.js";
-
-const app = express();
+const app = createApp();
 const PORT = process.env.PORT || 3001;
-
-// Middleware
-app.use(cors({
-  origin: process.env.FRONTEND_URL || "http://localhost:3000",
-  credentials: true,
-}));
-app.use(express.json());
-
-// Health check
-app.get("/health", (req, res) => {
-  res.json({ 
-    status: "ok", 
-    timestamp: new Date().toISOString(),
-    service: "fest-entry-verification",
-  });
-});
-
-// API Routes
-app.use("/api/scan", scanRoutes);
-app.use("/api/events", eventsRoutes);
-app.use("/api/orders", ordersRoutes);
-app.use("/api/users", usersRoutes);
-
-// Error handling
-app.use(errorHandler);
-
-// 404 handler
-app.use((req, res) => {
-  res.status(404).json({
-    success: false,
-    error: "Endpoint not found",
-  });
-});
 
 // Start server
 app.listen(PORT, () => {

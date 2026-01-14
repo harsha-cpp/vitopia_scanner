@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: vitopia-scanner
+    runtime: node
+    plan: free
+    region: oregon
+    buildCommand: "corepack enable && pnpm install --frozen-lockfile && pnpm run render:build"
+    startCommand: "pnpm run render:start"
+    envVars:
+      - key: NODE_OPTIONS
+        value: "--no-network-family-autoselection"
+      - key: CONVEX_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: REDIS_URL
+        fromService:
+          name: vitopia-redis
+          type: redis
+          property: connectionString
+  - type: redis
+    name: vitopia-redis
+    plan: free
+    region: oregon
+    ipAllowList: []

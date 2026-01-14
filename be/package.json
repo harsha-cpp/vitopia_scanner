@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "concurrently \"npm run dev:convex\" \"npm run dev:server\"",
     "dev:convex": "convex dev",
-    "dev:server": "tsx watch src/server.ts",
+    "dev:server": "NODE_OPTIONS='--no-network-family-autoselection' tsx watch src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
     "convex:deploy": "convex deploy"
@@ -17,7 +17,8 @@
     "dotenv": "^16.4.5",
     "express": "^4.21.0",
     "ioredis": "^5.4.1",
-    "jsonwebtoken": "^9.0.2",
+    "jsonwebtoken": "^9.0.3",
+    "qrcode": "^1.5.4",
     "uuid": "^10.0.0"
   },
   "devDependencies": {

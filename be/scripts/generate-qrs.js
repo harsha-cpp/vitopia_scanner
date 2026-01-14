@@ -1,24 +1,16 @@
 import { createRequire } from "module";
 import fs from "fs";
 import path from "path";
+import { execSync } from "child_process";
 
 const require = createRequire(import.meta.url);
-const { ConvexHttpClient } = require("convex/browser");
 const dotenv = require("dotenv");
 const jwt = require("jsonwebtoken");
 const QRCode = require("qrcode");
 
 dotenv.config({ path: path.resolve("/home/kaizen/opus-fest/be/.env") });
 
-const { api } = await import("../convex/_generated/api.js");
-
-const convexUrl = process.env.CONVEX_URL;
 const jwtSecret = process.env.JWT_SECRET;
-
-if (!convexUrl) {
-  console.error("Missing CONVEX_URL in .env");
-  process.exit(1);
-}
 
 if (!jwtSecret) {
   console.error("Missing JWT_SECRET in .env");
@@ -30,29 +22,17 @@ if (!fs.existsSync(outputDir)) {
   fs.mkdirSync(outputDir, { recursive: true });
 }
 
-const client = new ConvexHttpClient(convexUrl);
+console.log("Fetching Day1 orders via Convex CLI...");
 
-console.log("Fetching Day1 orders...");
-
-// Get Day1 event
-const events = await client.query(api.events.listActive, {});
-const day1Event = events.find((e) => e.name === "Vitopia2026-Day1");
-
-if (!day1Event) {
-  console.error("Vitopia2026-Day1 event not found");
-  process.exit(1);
-}
-
-// Get orders for Day1
-const allOrders = await client.query(api.orders.getScanLogs, {
-  eventId: day1Event._id,
-  limit: 100,
+// Use Convex CLI which seems more stable
+const result = execSync('npx convex run orders:adjustVitopiaSeed \'{}\'', {
+  cwd: '/home/kaizen/opus-fest/be',
+  encoding: 'utf-8',
+  timeout: 60000
 });
 
-// We need to get orders directly - let's use a different approach
-// Query orders by getting user orders
-const ordersResult = await client.mutation(api.orders.adjustVitopiaSeed, {});
-const orders = ordersResult.day1Orders;
+const data = JSON.parse(result);
+const orders = data.day1Orders;
 
 console.log(`Found ${orders.length} Day1 orders`);
 console.log("Generating QR codes...\n");
