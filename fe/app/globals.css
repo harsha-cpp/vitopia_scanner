@@ -1,0 +1,105 @@
+@import "tailwindcss";
+
+:root {
+  --background: #000000;
+  --foreground: #ffffff;
+  --primary: #9AE600;
+  --primary-dark: #7bc400;
+  --text-secondary: #99A1AF;
+  --success: #9AE600;
+  --success-bg: #1a2e00;
+  --error: #ef4444;
+  --error-bg: #2d0a0a;
+  --warning: #f59e0b;
+  --warning-bg: #2d1f05;
+  --surface: #0a0a0a;
+  --surface-light: #1a1a1a;
+  --border: #1a1a1a;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --font-sans: var(--font-outfit);
+  --font-heading: var(--font-anton);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), "Outfit", sans-serif;
+}
+
+/* Heading font */
+h1, h2, h3, .font-heading {
+  font-family: var(--font-heading), "Anton", sans-serif;
+}
+
+/* Animation for scan result */
+@keyframes pulse-success {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+@keyframes pulse-error {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.02); opacity: 0.9; }
+}
+
+.animate-pulse-success {
+  animation: pulse-success 0.5s ease-in-out 2;
+}
+
+.animate-pulse-error {
+  animation: pulse-error 0.3s ease-in-out 3;
+}
+
+/* Scanner overlay */
+.scanner-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.scanner-frame {
+  width: 250px;
+  height: 250px;
+  border: 3px solid rgba(154, 230, 0, 0.8);
+  border-radius: 16px;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
+}
+
+.scanner-line {
+  position: absolute;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #9AE600, transparent);
+  animation: scan 2s linear infinite;
+}
+
+@keyframes scan {
+  0% { top: 0; }
+  50% { top: 100%; }
+  100% { top: 0; }
+}
+
+/* Glow effect for primary buttons */
+.glow-primary {
+  box-shadow: 0 0 20px rgba(154, 230, 0, 0.3);
+}
+
+.glow-primary:hover {
+  box-shadow: 0 0 30px rgba(154, 230, 0, 0.5);
+}
+
+/* Text gradient for logo */
+.text-gradient {
+  background: linear-gradient(135deg, #9AE600 0%, #7bc400 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}

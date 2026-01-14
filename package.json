@@ -1,0 +1,20 @@
+{
+  "name": "sristi",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Fest Entry Verification System - Monorepo",
+  "scripts": {
+    "dev": "pnpm --filter fe dev & pnpm --filter be dev:server",
+    "dev:fe": "pnpm --filter fe dev",
+    "dev:be": "pnpm --filter be dev:server",
+    "dev:convex": "pnpm --filter be dev:convex",
+    "build": "pnpm --filter fe build & pnpm --filter be build",
+    "build:fe": "pnpm --filter fe build",
+    "build:be": "pnpm --filter be build",
+    "redis:up": "docker compose up -d",
+    "redis:down": "docker compose down",
+    "redis:logs": "docker compose logs -f redis",
+    "start:all": "pnpm run redis:up && pnpm run dev"
+  },
+  "packageManager": "pnpm@10.27.0"
+}
