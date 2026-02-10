@@ -3,7 +3,7 @@
 import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { Lock, AlertCircle, Loader2 } from "lucide-react";
+import { AlertCircle, Loader2 } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -51,9 +51,6 @@ export default function LoginPage() {
             className="h-10 w-auto mx-auto mb-6"
             unoptimized
           />
-          <div className="w-16 h-16 bg-[#1a2e00] rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <Lock className="w-8 h-8 text-[#9AE600]" />
-          </div>
           <h1 className="font-heading text-3xl tracking-wide text-white mb-2">
             SCANNER LOGIN
           </h1>
@@ -127,7 +124,7 @@ export default function LoginPage() {
         </form>
 
         <p className="text-center text-[#99A1AF] text-xs mt-8">
-          VITopia &apos;26 Entry Scanner
+          VITopia &apos;26 Entry Scanner · built by <em className="italic">AIR</em>
         </p>
       </div>
     </div>

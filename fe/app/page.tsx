@@ -15,6 +15,8 @@ import {
   ArrowLeft,
   ChevronDown,
   ChevronUp,
+  LayoutDashboard,
+  Lock,
 } from "lucide-react";
 import { BrowserQRCodeReader, IScannerControls } from "@zxing/browser";
 import { verifyTicket, ScanResult, getEvents, Event } from "@/lib/api";
@@ -35,6 +37,7 @@ interface ScanRecord {
 function formatEventName(name: string): string {
   if (name === "Vitopia2026-Day1") return "Vitopia Day 1";
   if (name === "Vitopia2026-Day2") return "Vitopia Day 2";
+  if (name === "Vitopia2026-Day3") return "Vitopia Day 3";
   return name;
 }
 
@@ -276,7 +279,8 @@ export default function Home() {
     return (
       <div className="min-h-screen bg-black text-white flex flex-col">
         <header className="border-b border-[#1a1a1a] bg-black/90 backdrop-blur-sm safe-top">
-          <div className="max-w-md mx-auto px-4 py-5 flex justify-center">
+          <div className="max-w-md mx-auto px-4 py-5 flex items-center justify-between">
+            <div className="w-10" />
             <Image
               src="https://vitopia.vitap.ac.in/_next/image?url=%2Fvitopia-color.webp&w=256&q=75"
               alt="VITopia"
@@ -285,6 +289,13 @@ export default function Home() {
               className="h-10 w-auto"
               unoptimized
             />
+            <a
+              href="/dashboard"
+              className="p-2 active:bg-[#1a1a1a] rounded-lg transition-colors"
+              title="Dashboard"
+            >
+              <LayoutDashboard className="w-5 h-5 text-[#9AE600]" />
+            </a>
           </div>
         </header>
 
@@ -336,13 +347,39 @@ export default function Home() {
                   <p>No Day 1 events available</p>
                 </div>
               )}
+
+              <div className="w-full bg-[#0a0a0a] border border-[#1a1a1a] rounded-xl p-4 opacity-50 cursor-not-allowed">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-[#1a1a1a]">
+                    <Calendar className="w-5 h-5 text-[#555]" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h2 className="text-base font-semibold text-white truncate">Vitopia Day 2</h2>
+                    <p className="text-xs text-[#99A1AF]">23 Feb 2026 • VIT-AP Campus</p>
+                  </div>
+                  <Lock className="w-4 h-4 text-[#555]" />
+                </div>
+              </div>
+
+              <div className="w-full bg-[#0a0a0a] border border-[#1a1a1a] rounded-xl p-4 opacity-50 cursor-not-allowed">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-[#1a1a1a]">
+                    <Calendar className="w-5 h-5 text-[#555]" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h2 className="text-base font-semibold text-white truncate">Vitopia Day 3</h2>
+                    <p className="text-xs text-[#99A1AF]">24 Feb 2026 • VIT-AP Campus</p>
+                  </div>
+                  <Lock className="w-4 h-4 text-[#555]" />
+                </div>
+              </div>
             </div>
           )}
         </main>
 
         <footer className="border-t border-[#1a1a1a] py-3 safe-bottom">
           <div className="max-w-md mx-auto px-4 text-center text-[#99A1AF] text-xs">
-            <p>VITopia &apos;26 Entry Scanner</p>
+            <p>VITopia &apos;26 Entry Scanner · built by <em className="italic">AIR</em></p>
           </div>
         </footer>
       </div>
