@@ -369,14 +369,17 @@ export default function Home() {
               <div className="pt-3">
                 <a
                   href="/dashboard"
-                  className="w-full bg-[#0a0a0a] border border-[#1a1a1a] rounded-xl p-4 flex items-center gap-3 active:scale-[0.98] transition-all"
+                  className="block w-full bg-[#0a0a0a] border border-[#1a1a1a] rounded-xl p-4 active:scale-[0.98] transition-all"
                 >
-                  <div className="p-2 rounded-lg bg-[#1a1a1a]">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-[#1a1a1a]">
+                      <LayoutDashboard className="w-5 h-5 text-[#9AE600]" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h2 className="text-base font-semibold text-white truncate">Dashboard</h2>
+                      <p className="text-xs text-[#99A1AF]">Analytics & scan history</p>
+                    </div>
                     <LayoutDashboard className="w-5 h-5 text-[#9AE600]" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h2 className="text-base font-semibold text-white truncate">Dashboard</h2>
-                    <p className="text-xs text-[#99A1AF]">Analytics & scan history</p>
                   </div>
                 </a>
               </div>
