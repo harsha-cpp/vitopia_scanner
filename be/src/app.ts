@@ -26,6 +26,8 @@ export const createApp = ({ enableNotFound = true }: AppOptions = {}): express.E
     "http://localhost:3001",
     "http://157.245.97.218",
     "https://157.245.97.218",
+    "https://scanner.vitap.in",
+    "http://scanner.vitap.in",
     process.env.FRONTEND_URL,
     process.env.RENDER_EXTERNAL_URL,
   ].filter(Boolean) as string[];
