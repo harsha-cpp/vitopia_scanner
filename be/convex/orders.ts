@@ -324,6 +324,79 @@ export const resetDay1Checkins = mutation({
   },
 });
 
+// Dashboard: analytics + enriched scan logs in a single query
+export const getDashboardData = query({
+  args: {},
+  handler: async (ctx) => {
+    const events = await ctx.db.query("events").collect();
+
+    const eventAnalytics = await Promise.all(
+      events.map(async (event) => {
+        const orders = await ctx.db
+          .query("orders")
+          .withIndex("by_eventId", (q) => q.eq("eventId", event._id))
+          .collect();
+        const paid = orders.filter((o) => o.paymentStatus === "paid");
+        const checkedIn = paid.filter((o) => o.checkedIn);
+        return {
+          eventId: event._id,
+          eventName: event.name,
+          sold: paid.reduce((s, o) => s + o.quantity, 0),
+          checkedIn: checkedIn.reduce((s, o) => s + o.quantity, 0),
+          remaining:
+            event.capacity - paid.reduce((s, o) => s + o.quantity, 0),
+          capacity: event.capacity,
+        };
+      })
+    );
+
+    const totalSold = eventAnalytics.reduce((s, e) => s + e.sold, 0);
+    const totalChecked = eventAnalytics.reduce((s, e) => s + e.checkedIn, 0);
+
+    const logs = await ctx.db
+      .query("scanLogs")
+      .order("desc")
+      .take(500);
+
+    const enrichedLogs = await Promise.all(
+      logs.map(async (log) => {
+        const event = await ctx.db.get(log.eventId);
+        const order = await ctx.db
+          .query("orders")
+          .withIndex("by_orderId", (q) => q.eq("orderId", log.orderId))
+          .first();
+        let userName = "";
+        let userEmail = "";
+        if (order) {
+          const user = await ctx.db.get(order.userId);
+          userName = user?.name || "";
+          userEmail = user?.email || "";
+        }
+        return {
+          orderId: log.orderId,
+          scanResult: log.scanResult,
+          scannedBy: log.scannedBy,
+          gate: log.gate,
+          timestamp: log.timestamp,
+          eventName: event?.name || "",
+          userName,
+          userEmail,
+        };
+      })
+    );
+
+    return {
+      analytics: {
+        totalTicketsSold: totalSold,
+        totalCheckedIn: totalChecked,
+        totalRemaining: totalSold - totalChecked,
+        events: eventAnalytics,
+      },
+      scanLogs: enrichedLogs,
+    };
+  },
+});
+
 // Adjust Vitopia seed data and return Day1 orders
 export const adjustVitopiaSeed = mutation({
   args: {},
