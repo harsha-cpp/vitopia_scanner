@@ -50,14 +50,9 @@ let count = 0;
 for (const order of orders) {
   const payload = {
     orderId: order.orderId,
-    eventId: order.eventId,
-    userId: order.userId,
-    quantity: order.quantity,
-    issuedAt: Date.now(),
-    expiresAt: Date.now() + 365 * 24 * 60 * 60 * 1000,
   };
 
-  const token = jwt.sign(payload, jwtSecret, { algorithm: "HS256" });
+  const token = jwt.sign(payload, jwtSecret, { algorithm: "HS256", noTimestamp: true });
   const targetDir = order.checkedIn ? scannedDir : unscannedDir;
   const filename = path.join(targetDir, `${order.orderId}.png`);
   await QRCode.toFile(filename, token, { width: 512, margin: 2 });

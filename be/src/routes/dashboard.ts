@@ -1,6 +1,7 @@
 import { Router, Request, Response } from "express";
 import { ConvexHttpClient } from "convex/browser";
 import crypto from "crypto";
+import jwt from "jsonwebtoken";
 import { loadConvexApi } from "../utils/convex-api.js";
 
 const router: Router = Router();
@@ -78,18 +79,32 @@ router.post("/auth", (req: Request, res: Response) => {
   res.json({ success: true, token });
 });
 
+const AUTH_SECRET = process.env.AUTH_SECRET || "opus-fest-auth-secret-2026";
+const AUTH_COOKIE_NAME = "opus-session";
+
+function parseCookie(cookieHeader: string | undefined, name: string): string | undefined {
+  if (!cookieHeader) return undefined;
+  const match = cookieHeader.match(new RegExp(`(?:^|;\\s*)${name}=([^;]*)`));
+  return match ? decodeURIComponent(match[1]) : undefined;
+}
+
 function requireDashboardToken(req: Request, res: Response): boolean {
+  const sessionCookie = parseCookie(req.headers.cookie, AUTH_COOKIE_NAME);
+  if (sessionCookie) {
+    try {
+      jwt.verify(sessionCookie, AUTH_SECRET);
+      return true;
+    } catch {}
+  }
+
   const auth = req.headers.authorization;
-  if (!auth || !auth.startsWith("Bearer ")) {
-    res.status(401).json({ success: false, error: "Authorization required" });
-    return false;
+  if (auth && auth.startsWith("Bearer ")) {
+    const token = auth.slice(7);
+    if (activeTokens.has(token)) return true;
   }
-  const token = auth.slice(7);
-  if (!activeTokens.has(token)) {
-    res.status(401).json({ success: false, error: "Invalid or expired token" });
-    return false;
-  }
-  return true;
+
+  res.status(401).json({ success: false, error: "Authorization required" });
+  return false;
 }
 
 router.get("/data", async (req: Request, res: Response) => {

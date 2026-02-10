@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   RefreshCw,
@@ -9,10 +10,10 @@ import {
   Ticket,
   CheckCircle2,
   Clock,
-  Lock,
   AlertCircle,
   Search,
   ChevronDown,
+  LogOut,
 } from "lucide-react";
 
 const API_URL =
@@ -51,159 +52,6 @@ interface DashboardData {
   scanLogs: ScanLog[];
 }
 
-function PinGate({ onAuth }: { onAuth: (token: string) => void }) {
-  const [pin, setPin] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [attemptsRemaining, setAttemptsRemaining] = useState<number | null>(null);
-  const [retryAfter, setRetryAfter] = useState<number | null>(null);
-  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
-
-  useEffect(() => {
-    if (retryAfter && retryAfter > 0) {
-      const timer = setInterval(() => {
-        setRetryAfter((prev) => {
-          if (prev && prev <= 1) {
-            setError("");
-            setAttemptsRemaining(null);
-            return null;
-          }
-          return prev ? prev - 1 : null;
-        });
-      }, 1000);
-      return () => clearInterval(timer);
-    }
-  }, [retryAfter]);
-
-  useEffect(() => {
-    inputRefs.current[0]?.focus();
-  }, []);
-
-  const handleDigitChange = (index: number, value: string) => {
-    if (!/^\d*$/.test(value)) return;
-
-    const digits = pin.split("");
-    while (digits.length < 6) digits.push("");
-
-    if (value.length > 1) {
-      const pasted = value.slice(0, 6 - index);
-      for (let i = 0; i < pasted.length; i++) {
-        digits[index + i] = pasted[i];
-      }
-      const newPin = digits.join("").slice(0, 6);
-      setPin(newPin);
-      const nextIndex = Math.min(index + pasted.length, 5);
-      inputRefs.current[nextIndex]?.focus();
-      if (newPin.length === 6) submitPin(newPin);
-      return;
-    }
-
-    digits[index] = value;
-    const newPin = digits.join("").slice(0, 6);
-    setPin(newPin);
-
-    if (value && index < 5) {
-      inputRefs.current[index + 1]?.focus();
-    }
-    if (newPin.length === 6) submitPin(newPin);
-  };
-
-  const handleKeyDown = (index: number, e: React.KeyboardEvent) => {
-    if (e.key === "Backspace" && !pin[index] && index > 0) {
-      inputRefs.current[index - 1]?.focus();
-      const digits = pin.split("");
-      digits[index - 1] = "";
-      setPin(digits.join(""));
-    }
-  };
-
-  async function submitPin(pinValue: string) {
-    setLoading(true);
-    setError("");
-    try {
-      const res = await fetch(`${API_URL}/api/dashboard/auth`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ pin: pinValue }),
-      });
-      const data = await res.json();
-
-      if (data.success) {
-        onAuth(data.token);
-      } else if (res.status === 429) {
-        setRetryAfter(data.retryAfter || 60);
-        setError("Too many attempts");
-        setPin("");
-      } else {
-        setError(data.error || "Incorrect PIN");
-        setAttemptsRemaining(data.attemptsRemaining ?? null);
-        setPin("");
-        inputRefs.current[0]?.focus();
-      }
-    } catch {
-      setError("Network error");
-      setPin("");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  return (
-    <div className="min-h-screen bg-black flex items-center justify-center p-4">
-      <div className="w-full max-w-sm">
-        <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-[#1a2e00] rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <Lock className="w-8 h-8 text-[#9AE600]" />
-          </div>
-          <h1 className="font-heading text-3xl tracking-wide text-white mb-2">
-            DASHBOARD
-          </h1>
-          <p className="text-[#99A1AF] text-sm">Enter your 6-digit access PIN</p>
-        </div>
-
-        <div className="flex justify-center gap-3 mb-6">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <input
-              key={i}
-              ref={(el) => { inputRefs.current[i] = el; }}
-              type="text"
-              inputMode="numeric"
-              maxLength={1}
-              value={pin[i] || ""}
-              onChange={(e) => handleDigitChange(i, e.target.value)}
-              onKeyDown={(e) => handleKeyDown(i, e)}
-              disabled={loading || retryAfter !== null}
-              className={`w-12 h-14 text-center text-xl font-bold rounded-xl border-2 bg-[#0a0a0a] text-white outline-none transition-all
-                ${error ? "border-red-500" : pin[i] ? "border-[#9AE600]" : "border-[#1a1a1a]"}
-                focus:border-[#9AE600] focus:ring-1 focus:ring-[#9AE600]/30
-                disabled:opacity-40`}
-            />
-          ))}
-        </div>
-
-        {error && (
-          <div className="flex items-center gap-2 justify-center text-red-500 text-sm mb-4">
-            <AlertCircle className="w-4 h-4" />
-            <span>
-              {error}
-              {retryAfter ? ` — retry in ${retryAfter}s` : ""}
-              {attemptsRemaining !== null && !retryAfter
-                ? ` (${attemptsRemaining} left)`
-                : ""}
-            </span>
-          </div>
-        )}
-
-        {loading && (
-          <div className="flex justify-center">
-            <div className="w-6 h-6 border-2 border-[#9AE600] border-t-transparent rounded-full animate-spin" />
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
 const RESULT_STYLES: Record<string, { label: string; bg: string; text: string }> = {
   success: { label: "Success", bg: "bg-[#1a2e00]", text: "text-[#9AE600]" },
   already_used: { label: "Already Used", bg: "bg-[#2d1f05]", text: "text-[#f59e0b]" },
@@ -213,7 +61,8 @@ const RESULT_STYLES: Record<string, { label: string; bg: string; text: string }>
   wrong_event: { label: "Wrong Event", bg: "bg-[#2d1f05]", text: "text-[#f59e0b]" },
 };
 
-function Dashboard({ token }: { token: string }) {
+function Dashboard() {
+  const router = useRouter();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -221,13 +70,20 @@ function Dashboard({ token }: { token: string }) {
   const [filterEvent, setFilterEvent] = useState("all");
   const [filterResult, setFilterResult] = useState("all");
 
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } catch { /* ignore */ }
+    router.push("/login");
+  };
+
   const loadData = useCallback(async () => {
     try {
       const res = await fetch(`${API_URL}/api/dashboard/data`, {
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: "include",
       });
       if (res.status === 401) {
-        window.location.reload();
+        router.push("/login");
         return;
       }
       const json = await res.json();
@@ -242,7 +98,7 @@ function Dashboard({ token }: { token: string }) {
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [router]);
 
   useEffect(() => {
     loadData();
@@ -314,13 +170,22 @@ function Dashboard({ token }: { token: string }) {
               <p className="text-xs text-[#99A1AF]">VITopia &apos;26</p>
             </div>
           </div>
-          <button
-            onClick={() => { setLoading(true); loadData(); }}
-            className="p-2.5 hover:bg-[#1a1a1a] rounded-xl transition-colors"
-            title="Refresh"
-          >
-            <RefreshCw className={`w-5 h-5 text-[#99A1AF] ${loading ? "animate-spin" : ""}`} />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => { setLoading(true); loadData(); }}
+              className="p-2.5 hover:bg-[#1a1a1a] rounded-xl transition-colors"
+              title="Refresh"
+            >
+              <RefreshCw className={`w-5 h-5 text-[#99A1AF] ${loading ? "animate-spin" : ""}`} />
+            </button>
+            <button
+              onClick={handleLogout}
+              className="p-2.5 hover:bg-[#1a1a1a] rounded-xl transition-colors"
+              title="Logout"
+            >
+              <LogOut className="w-5 h-5 text-[#99A1AF]" />
+            </button>
+          </div>
         </div>
       </header>
 
@@ -537,10 +402,5 @@ function AnalyticsCard({
 }
 
 export default function DashboardPage() {
-  const [token, setToken] = useState<string | null>(null);
-
-  if (!token) {
-    return <PinGate onAuth={setToken} />;
-  }
-  return <Dashboard token={token} />;
+  return <Dashboard />;
 }

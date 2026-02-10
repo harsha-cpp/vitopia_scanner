@@ -4,33 +4,19 @@ const JWT_SECRET = process.env.JWT_SECRET || "your-super-secret-jwt-key-change-i
 
 export interface QRPayload {
   orderId: string;
-  eventId: string;
-  userId: string;
-  quantity: number;
-  issuedAt: number;
-  expiresAt: number;
+  // Legacy fields — kept optional for backward compat with old tokens
+  eventId?: string;
+  userId?: string;
+  quantity?: number;
+  issuedAt?: number;
+  expiresAt?: number;
 }
 
-/**
- * Generate a signed QR code payload
- */
-export function generateQRCode(data: {
-  orderId: string;
-  eventId: string;
-  userId: string;
-  quantity: number;
-}): string {
-  const payload: QRPayload = {
-    ...data,
-    issuedAt: Date.now(),
-    expiresAt: Date.now() + 365 * 24 * 60 * 60 * 1000, // 1 year validity
-  };
-
-  const token = jwt.sign(payload, JWT_SECRET, {
+export function generateQRCode(data: { orderId: string }): string {
+  return jwt.sign({ orderId: data.orderId }, JWT_SECRET, {
     algorithm: "HS256",
+    noTimestamp: true,
   });
-
-  return token;
 }
 
 /**
@@ -46,8 +32,8 @@ export function verifyQRCode(token: string): {
       algorithms: ["HS256"],
     }) as QRPayload;
 
-    // Check expiration
-    if (payload.expiresAt < Date.now()) {
+    // Check expiration for legacy tokens that have expiresAt
+    if (payload.expiresAt && payload.expiresAt < Date.now()) {
       return { valid: false, error: "Expired QR" };
     }
 

@@ -77,12 +77,8 @@ router.post("/:orderId/pay", async (req: Request, res: Response) => {
     // Mark as paid
     await convex.mutation(api.orders.markAsPaid, { orderId });
 
-    // Generate QR code
     const qrCode = generateQRCode({
       orderId: order.orderId,
-      eventId: order.eventId,
-      userId: order.userId,
-      quantity: order.quantity,
     });
 
     res.json({
@@ -123,9 +119,6 @@ router.get("/:orderId", async (req: Request, res: Response) => {
     if (order.paymentStatus === "paid") {
       qrCode = generateQRCode({
         orderId: order.orderId,
-        eventId: order.eventId,
-        userId: order.userId,
-        quantity: order.quantity,
       });
     }
 
@@ -168,9 +161,6 @@ router.get("/:orderId/qr", async (req: Request, res: Response) => {
 
     const qrCode = generateQRCode({
       orderId: order.orderId,
-      eventId: order.eventId,
-      userId: order.userId,
-      quantity: order.quantity,
     });
 
     res.json({

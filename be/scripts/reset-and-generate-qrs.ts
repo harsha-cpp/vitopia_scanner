@@ -14,18 +14,11 @@ const JWT_SECRET = "your_super_secret_jwt_key_change_in_production";
 
 const convex = new ConvexHttpClient(CONVEX_URL);
 
-function generateQRToken(data: {
-  orderId: string;
-  eventId: string;
-  userId: string;
-  quantity: number;
-}): string {
-  const payload = {
-    ...data,
-    issuedAt: Date.now(),
-    expiresAt: Date.now() + 365 * 24 * 60 * 60 * 1000,
-  };
-  return jwt.sign(payload, JWT_SECRET, { algorithm: "HS256" });
+function generateQRToken(data: { orderId: string }): string {
+  return jwt.sign({ orderId: data.orderId }, JWT_SECRET, {
+    algorithm: "HS256",
+    noTimestamp: true,
+  });
 }
 
 async function main() {
@@ -58,9 +51,6 @@ async function main() {
   for (const order of day1Data.day1Orders) {
     const token = generateQRToken({
       orderId: order.orderId,
-      eventId: order.eventId,
-      userId: order.userId,
-      quantity: order.quantity,
     });
 
     const verified = jwt.verify(token, JWT_SECRET, { algorithms: ["HS256"] }) as any;

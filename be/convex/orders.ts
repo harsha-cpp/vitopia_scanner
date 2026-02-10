@@ -120,6 +120,7 @@ export const checkIn = mutation({
     orderId: v.string(),
     scannedBy: v.string(),
     gate: v.string(),
+    expectedEventId: v.optional(v.id("events")),
   },
   handler: async (ctx, args) => {
     const order = await ctx.db
@@ -128,11 +129,15 @@ export const checkIn = mutation({
       .first();
 
     if (!order) {
-      return { success: false, reason: "not_found" };
+      return { success: false, reason: "not_found", eventId: undefined };
+    }
+
+    if (args.expectedEventId && order.eventId !== args.expectedEventId) {
+      return { success: false, reason: "wrong_event", eventId: order.eventId };
     }
 
     if (order.paymentStatus !== "paid") {
-      return { success: false, reason: "not_paid" };
+      return { success: false, reason: "not_paid", eventId: order.eventId };
     }
 
     if (order.checkedIn) {
@@ -141,10 +146,10 @@ export const checkIn = mutation({
         reason: "already_used",
         checkedInAt: order.checkedInAt,
         checkedInBy: order.checkedInBy,
+        eventId: order.eventId,
       };
     }
 
-    // Perform check-in
     await ctx.db.patch(order._id, {
       checkedIn: true,
       checkedInAt: Date.now(),
@@ -152,13 +157,13 @@ export const checkIn = mutation({
       updatedAt: Date.now(),
     });
 
-    // Get user and event for response
     const user = await ctx.db.get(order.userId);
     const event = await ctx.db.get(order.eventId);
 
     return {
       success: true,
       reason: "success",
+      eventId: order.eventId,
       order: {
         orderId: order.orderId,
         quantity: order.quantity,

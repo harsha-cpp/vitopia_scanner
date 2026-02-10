@@ -59,23 +59,9 @@ router.post(
         return;
       }
 
-      const { orderId, eventId: ticketEventId } = qrResult.payload;
+      const { orderId } = qrResult.payload;
 
-      // Step 2: Check event match if provided
-      if (eventId && ticketEventId !== eventId) {
-        res.status(400).json({
-          success: false,
-          error: "Ticket is for a different event",
-          code: "WRONG_EVENT",
-          details: {
-            ticketEventId,
-            scanningEventId: eventId,
-          },
-        });
-        return;
-      }
-
-      // Step 3: Check Redis cache for fast rejection
+      // Step 2: Check Redis cache for fast rejection
       const cachedResult = await lockManager.getCachedScanResult(orderId);
       if (cachedResult.cached && cachedResult.result === "already_used") {
         res.status(409).json({
@@ -101,23 +87,24 @@ router.post(
       }
 
       try {
-        // Step 5: Perform check-in in Convex
+        // Step 5: Perform check-in in Convex (includes event-match check)
         const result = await getConvex().mutation(api.orders.checkIn, {
           orderId,
           scannedBy: gate.id,
           gate: gate.id,
+          expectedEventId: eventId ? eventId as any : undefined,
         });
 
         // Step 6: Update cache and log
         if (result.success) {
-          // Cache as used for fast future rejections
           await lockManager.cacheScanResult(orderId, "already_used", Date.now());
-          await lockManager.incrementScanCount(ticketEventId);
+          if (result.eventId) {
+            await lockManager.incrementScanCount(result.eventId);
+          }
 
-          // Log successful scan
           await getConvex().mutation(api.orders.logScan, {
             orderId,
-            eventId: ticketEventId as any,
+            eventId: result.eventId as any,
             scanResult: "success",
             scannedBy: gate.id,
             gate: gate.id,
@@ -147,10 +134,9 @@ router.post(
             );
           }
 
-          // Log failed scan
           await getConvex().mutation(api.orders.logScan, {
             orderId,
-            eventId: ticketEventId as any,
+            eventId: result.eventId as any,
             scanResult: result.reason as any,
             scannedBy: gate.id,
             gate: gate.id,
