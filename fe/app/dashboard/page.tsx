@@ -188,12 +188,12 @@ function Dashboard() {
               PER-EVENT BREAKDOWN
             </h2>
             <div className="space-y-4">
-              {analytics.events.map((ev) => {
+              {analytics.events.filter(ev => ev.eventName !== "Event Registration" && ev.eventName !== "VITopia 2026").map((ev) => {
                 const pct = ev.sold > 0 ? Math.round((ev.checkedIn / ev.sold) * 100) : 0;
                 return (
                   <div key={ev.eventId}>
                     <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-sm text-white font-medium">{ev.eventName}</span>
+                      <span className="text-sm text-white font-medium">{formatEventName(ev.eventName)}</span>
                       <span className="text-xs text-[#99A1AF]">
                         {ev.checkedIn}/{ev.sold} checked in · {ev.remaining} remaining
                       </span>
@@ -230,7 +230,7 @@ function Dashboard() {
             >
               <option value="all">All Events</option>
               {eventNames.map((n) => (
-                <option key={n} value={n}>{n}</option>
+                <option key={n} value={n}>{formatEventName(n)}</option>
               ))}
             </select>
             <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#99A1AF] pointer-events-none" />
@@ -307,7 +307,7 @@ function Dashboard() {
                           {log.orderId}
                         </td>
                         <td className="px-5 py-3 text-white whitespace-nowrap">
-                          {log.eventName || "—"}
+                          {log.eventName ? formatEventName(log.eventName) : "—"}
                         </td>
                         <td className="px-5 py-3 text-[#99A1AF]">{log.scannedBy}</td>
                         <td className="px-5 py-3 text-[#99A1AF]">{log.gate}</td>

@@ -34,7 +34,13 @@ export interface DashboardData {
 }
 
 export async function getDashboardData(): Promise<DashboardData> {
-  const events = await prisma.event.findMany();
+  const events = await prisma.event.findMany({
+    where: {
+      name: {
+        notIn: ["Event Registration", "VITopia 2026"]
+      }
+    }
+  });
 
   const eventAnalytics = await Promise.all(
     events.map(async (event) => {

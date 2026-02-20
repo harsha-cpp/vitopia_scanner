@@ -42,11 +42,11 @@ interface ScanRecord {
 }
 
 const EVENT_NAME_BY_TOKEN: Record<string, string> = {
-  DAY_1: "Day-1",
-  DAY_2: "Day-2",
-  DAY_3: "Day-3",
-  PRANAV: "Mr. Pranav Sharma",
-  UDAYA: "Mr. Sarat Raja Uday Boddeda",
+  DAY_1: "Pro Show Day 1",
+  DAY_2: "Pro Show Day 2",
+  DAY_3: "Pro Show Day 3",
+  PRANAV: "Pranav Sharma Stand Up",
+  UDAYA: "Uday Boddeda Stand Up",
   TSHIRT: "T-Shirt Distribution",
 };
 
@@ -60,11 +60,11 @@ const EVENT_SORT_BY_TOKEN: Record<string, number> = {
 };
 
 function formatEventName(name: string): string {
-  if (name === "Vitopia2026-Day1") return "Vitopia Day 1";
-  if (name === "Vitopia2026-Day2") return "Vitopia Day 2";
-  if (name === "Vitopia2026-Day3") return "Vitopia Day 3";
-  if (name.includes("Mr. Pranav Sharma")) return "Mr. Pranav Sharma";
-  if (name.includes("Sarat Raja Uday Boddeda")) return "Mr. Sarat Raja Uday Boddeda";
+  if (name === "Vitopia2026-Day1") return "Pro Show Day 1";
+  if (name === "Vitopia2026-Day2") return "Pro Show Day 2";
+  if (name === "Vitopia2026-Day3") return "Pro Show Day 3";
+  if (name.includes("Pranav Sharma")) return "Pranav Sharma Stand Up";
+  if (name.includes("Sarat Raja Uday Boddeda") || name.includes("Uday")) return "Uday Boddeda Stand Up";
   return name;
 }
 
@@ -165,6 +165,8 @@ export default function Home() {
   const historyLastScannedRef = useRef<string>("");
   const historyStatusRef = useRef<HistoryLookupStatus>("idle");
   const resumeMainScanRef = useRef<boolean>(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const verifiedScans = scanHistory.filter((s) => s.status === "success");
   const rejectedScans = scanHistory.filter((s) => s.status === "failed");
@@ -188,6 +190,16 @@ export default function Home() {
   useEffect(() => {
     historyStatusRef.current = historyStatus;
   }, [historyStatus]);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const startCamera = useCallback(async () => {
     try {
@@ -626,36 +638,40 @@ export default function Home() {
           )}
 
           {!loading && (
-            <div className="space-y-3">
-              {orderedEvents.map((event) => (
+            <div className="space-y-5">
+              <div className="relative" ref={dropdownRef}>
                 <button
                   type="button"
-                  key={event._id}
-                  onClick={() => setSelectedEvent(event)}
-                  className="w-full bg-[#0a0a0a] border border-[#1a1a1a] rounded-xl p-4 text-left active:scale-[0.98] transition-all"
+                  onClick={() => setDropdownOpen((o) => !o)}
+                  className="w-full bg-[#0a0a0a] border border-[#1a1a1a] rounded-xl px-4 py-4 text-left flex items-center justify-between focus:outline-none focus:border-[#9AE600]/50 focus:ring-1 focus:ring-[#9AE600]/30 transition-all"
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-[#1a1a1a]">
-                      <Calendar className="w-5 h-5 text-[#9AE600]" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h2 className="text-base font-semibold text-white truncate">
-                        {getEventDisplayName(event)}
-                      </h2>
-                      <p className="text-xs text-[#99A1AF]">
-                        {new Date(event.date).toLocaleDateString("en-IN", {
-                          day: "numeric",
-                          month: "short",
-                          year: "numeric",
-                        })} • {event.venue}
-                      </p>
-                    </div>
-                    <Camera className="w-5 h-5 text-[#9AE600]" />
-                  </div>
+                  <span className="text-base text-[#99A1AF]">Choose an event...</span>
+                  <ChevronDown className={`w-5 h-5 text-[#9AE600] transition-transform ${dropdownOpen ? "rotate-180" : ""}`} />
                 </button>
-              ))}
 
-              {orderedEvents.length === 0 && (
+                {dropdownOpen && (
+                  <div className="absolute z-50 mt-2 w-full bg-[#0a0a0a] border border-[#1a1a1a] rounded-xl overflow-hidden shadow-2xl shadow-black/60">
+                    {orderedEvents
+                      .filter((ev) => ev.accessToken)
+                      .map((event) => (
+                        <button
+                          type="button"
+                          key={event._id}
+                          onClick={() => {
+                            setSelectedEvent(event);
+                            setDropdownOpen(false);
+                          }}
+                          className="w-full px-4 py-3.5 text-left text-sm text-white hover:bg-[#9AE600]/10 transition-colors flex items-center gap-3 border-b border-[#1a1a1a] last:border-b-0"
+                        >
+                          <Calendar className="w-4 h-4 text-[#9AE600] shrink-0" />
+                          <span>{getEventDisplayName(event)}</span>
+                        </button>
+                      ))}
+                  </div>
+                )}
+              </div>
+
+              {orderedEvents.filter((ev) => ev.accessToken).length === 0 && (
                 <div className="text-center py-10 text-[#99A1AF]">
                   <p>No events available</p>
                 </div>
@@ -810,128 +826,6 @@ export default function Home() {
             </div>
           )}
 
-          {status !== "idle" && status !== "scanning" && (
-            <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/90 backdrop-blur-lg">
-              <div className="bg-[#111111] border border-[#2a2a2a] rounded-2xl w-[calc(100%-2rem)] max-w-sm max-h-[92%] shadow-2xl overflow-hidden flex flex-col">
-                {/* Top accent bar */}
-                <div className={`h-1 w-full ${
-                  status === "success"
-                    ? "bg-[#9AE600]"
-                    : status === "already_used"
-                    ? "bg-yellow-500"
-                    : "bg-red-500"
-                }`} />
-
-                <div className="flex flex-col items-center text-center px-6 pt-8 pb-6 overflow-y-auto">
-                  {/* Status Icon */}
-                  <div className={`w-20 h-20 rounded-full flex items-center justify-center mb-5 ${
-                    status === "success"
-                      ? "bg-[#9AE600]/15 ring-2 ring-[#9AE600]/30"
-                      : status === "already_used"
-                      ? "bg-yellow-500/15 ring-2 ring-yellow-500/30"
-                      : "bg-red-500/15 ring-2 ring-red-500/30"
-                  }`}>
-                    {status === "success" ? (
-                      <CheckCircle className="w-8 h-8 text-[#9AE600]" />
-                    ) : status === "already_used" ? (
-                      <AlertCircle className="w-10 h-10 text-yellow-500" />
-                    ) : (
-                      <XCircle className="w-10 h-10 text-red-500" />
-                    )}
-                  </div>
-
-                  {/* Status Title */}
-                  <h2 className={`text-2xl font-bold tracking-wide mb-6 ${
-                    status === "success"
-                      ? "text-[#9AE600]"
-                      : status === "already_used"
-                      ? "text-yellow-500"
-                      : "text-red-500"
-                  }`}>
-                    {status === "success"
-                      ? "ENTRY ALLOWED"
-                      : status === "already_used"
-                      ? "ALREADY SCANNED"
-                      : "ENTRY DENIED"}
-                  </h2>
-
-                  {/* Info Cards */}
-                  <div className="w-full space-y-3">
-                    {status === "already_used" && (
-                      <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl px-4 py-3 text-left">
-                        <p className="text-[11px] text-yellow-500/70 uppercase tracking-wider mb-0.5">Previously Scanned</p>
-                        <p className="text-sm text-yellow-400 font-medium">
-                          {formatTime(
-                            lastResult?.checkedInAt ??
-                              scanHistory.find(
-                                (entry) =>
-                                  entry.orderId === (lastResult?.data?.orderId ?? "") &&
-                                  entry.status === "success"
-                              )?.timestamp ??
-                              Date.now()
-                          )}
-                        </p>
-                      </div>
-                    )}
-
-                    {/* Attendee Name */}
-                    {lastResult?.data && (
-                      <div className="bg-white/5 rounded-xl px-4 py-3 text-left">
-                        <p className="text-[11px] text-[#6b7280] uppercase tracking-wider mb-0.5">Attendee</p>
-                        <p className="text-[15px] text-white font-semibold">
-                          {lastResult.data.user?.name ?? "Unknown attendee"}
-                        </p>
-                      </div>
-                    )}
-
-                    {/* Event Info */}
-                    {lastResult?.data?.event && (
-                      <div className="bg-white/5 rounded-xl px-4 py-3 text-left">
-                        <p className="text-[11px] text-[#6b7280] uppercase tracking-wider mb-0.5">Event</p>
-                        <p className="text-sm text-white font-medium">
-                          {getEventDisplayName(lastResult.data.event as Event)}
-                        </p>
-                      </div>
-                    )}
-
-                    {/* T-Shirt Info — only for T-Shirt Distribution event */}
-                    {selectedEvent?.accessToken === "TSHIRT" && lastResult?.data?.tshirt?.eligible && (
-                      <div className="bg-white/5 rounded-xl px-4 py-3 text-left">
-                        <p className="text-[11px] text-[#6b7280] uppercase tracking-wider mb-0.5">T-Shirt</p>
-                        <p className="text-sm text-white font-medium">
-                          {lastResult.data.tshirt.size || "N/A"} / {lastResult.data.tshirt.color || "N/A"}
-                        </p>
-                      </div>
-                    )}
-
-                    {/* Error Message */}
-                    {status === "error" && lastResult?.error && (
-                      <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 text-left">
-                        <p className="text-[11px] text-red-500/70 uppercase tracking-wider mb-0.5">Reason</p>
-                        <p className="text-sm text-red-400">{lastResult.error}</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Next Button */}
-                <div className="px-5 py-4 border-t border-[#1f1f1f]">
-                  <button
-                    onClick={() => {
-                      setStatus("idle");
-                      lastScannedRef.current = "";
-                    }}
-                    type="button"
-                    className="w-full py-3.5 bg-white/10 hover:bg-white/15 text-white rounded-xl font-semibold flex items-center justify-center gap-2 transition-all active:scale-[0.97]"
-                  >
-                    <X className="w-4 h-4" />
-                    Next Scan
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
           {!scanning && (
             <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#0a0a0a]">
               <CameraOff className="w-12 h-12 text-[#99A1AF] mb-3" />
@@ -972,6 +866,132 @@ export default function Home() {
           </div>
         )}
       </main>
+      {/* Full-screen scan result overlay */}
+      {status !== "idle" && status !== "scanning" && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-xl p-4">
+          <div className="w-full max-w-sm">
+            {/* Status indicator — floating above the card */}
+            <div className="flex flex-col items-center mb-5">
+              <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-3 ${
+                status === "success"
+                  ? "bg-[#9AE600]/15 ring-2 ring-[#9AE600]/30"
+                  : status === "already_used"
+                  ? "bg-yellow-500/15 ring-2 ring-yellow-500/30"
+                  : "bg-red-500/15 ring-2 ring-red-500/30"
+              }`}>
+                {status === "success" ? (
+                  <CheckCircle className="w-7 h-7 text-[#9AE600]" />
+                ) : status === "already_used" ? (
+                  <AlertCircle className="w-8 h-8 text-yellow-500" />
+                ) : (
+                  <XCircle className="w-8 h-8 text-red-500" />
+                )}
+              </div>
+              <h2 className={`text-xl font-bold tracking-wider ${
+                status === "success"
+                  ? "text-[#9AE600]"
+                  : status === "already_used"
+                  ? "text-yellow-500"
+                  : "text-red-500"
+              }`}>
+                {status === "success"
+                  ? "ENTRY ALLOWED"
+                  : status === "already_used"
+                  ? "ALREADY SCANNED"
+                  : "ENTRY DENIED"}
+              </h2>
+            </div>
+
+            {/* Info card */}
+            <div className="bg-[#111111] border border-[#2a2a2a] rounded-2xl overflow-hidden shadow-2xl">
+              {/* Top accent bar */}
+              <div className={`h-1 w-full ${
+                status === "success"
+                  ? "bg-[#9AE600]"
+                  : status === "already_used"
+                  ? "bg-yellow-500"
+                  : "bg-red-500"
+              }`} />
+
+              <div className="divide-y divide-[#1a1a1a]">
+                {/* Previously scanned warning */}
+                {status === "already_used" && (
+                  <div className="px-4 py-3 bg-yellow-500/5">
+                    <p className="text-[10px] text-yellow-500/70 uppercase tracking-wider">Previously Scanned</p>
+                    <p className="text-sm text-yellow-400 font-medium mt-0.5">
+                      {formatTime(
+                        lastResult?.checkedInAt ??
+                          scanHistory.find(
+                            (entry) =>
+                              entry.orderId === (lastResult?.data?.orderId ?? "") &&
+                              entry.status === "success"
+                          )?.timestamp ??
+                          Date.now()
+                      )}
+                    </p>
+                  </div>
+                )}
+
+                {/* Attendee */}
+                {lastResult?.data && (
+                  <div className="px-4 py-3">
+                    <p className="text-[10px] text-[#6b7280] uppercase tracking-wider">Attendee</p>
+                    <p className="text-[15px] text-white font-semibold mt-0.5">
+                      {lastResult.data.user?.name ?? "Unknown attendee"}
+                    </p>
+                  </div>
+                )}
+
+                {/* Event */}
+                {lastResult?.data?.event && (
+                  <div className="px-4 py-3">
+                    <p className="text-[10px] text-[#6b7280] uppercase tracking-wider">Event</p>
+                    <p className="text-sm text-white font-medium mt-0.5">
+                      {getEventDisplayName(lastResult.data.event as Event)}
+                    </p>
+                  </div>
+                )}
+
+                {/* T-Shirt — only for T-Shirt Distribution event */}
+                {selectedEvent?.accessToken === "TSHIRT" && lastResult?.data?.tshirt?.eligible && (
+                  <div className="px-4 py-3">
+                    <p className="text-[10px] text-[#6b7280] uppercase tracking-wider">T-Shirt</p>
+                    <p className="text-sm text-white font-medium mt-0.5">
+                      {lastResult.data.tshirt.size || "N/A"} / {lastResult.data.tshirt.color || "N/A"}
+                    </p>
+                  </div>
+                )}
+
+                {/* Error reason */}
+                {status === "error" && lastResult?.error && (
+                  <div className="px-4 py-3 bg-red-500/5">
+                    <p className="text-[10px] text-red-500/70 uppercase tracking-wider">Reason</p>
+                    <p className="text-sm text-red-400 mt-0.5">{lastResult.error}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Next Scan button — prominent, outside the card */}
+            <button
+              onClick={() => {
+                setStatus("idle");
+                lastScannedRef.current = "";
+              }}
+              type="button"
+              className={`w-full mt-4 py-4 rounded-2xl font-semibold text-base flex items-center justify-center gap-2 transition-all active:scale-[0.97] ${
+                status === "success"
+                  ? "bg-[#9AE600] text-black hover:bg-[#8AD500]"
+                  : "bg-white/10 text-white hover:bg-white/15"
+              }`}
+            >
+              <Camera className="w-5 h-5" />
+              Next Scan
+            </button>
+          </div>
+        </div>
+      )}
+
 
       {historyOpen && (
         <div className="fixed inset-0 z-[90] bg-black/70 backdrop-blur-md flex items-center justify-center p-4">
