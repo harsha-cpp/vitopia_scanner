@@ -6,6 +6,62 @@ import type { PrismaClient } from '../../generated/prisma/client.js';
 const prisma = basePrisma as unknown as PrismaClient;
 
 // A flag to prevent the cron job from overlapping with itself
+
+
+function parseProductMeta(rawMeta: string | null) {
+  if (!rawMeta) return { cleanName: "Unknown", tokens: [] };
+  
+  const tokens: string[] = [];
+  const displayNames: string[] = [];
+  const metaLower = rawMeta.toLowerCase();
+
+  // Parsing Special Events
+  const isPranav = metaLower.includes('pranav');
+  const isUday = metaLower.includes('uday') || metaLower.includes('sarat');
+
+  if (isPranav) {
+    tokens.push('PRANAV');
+    displayNames.push('Pranav Sharma');
+  }
+  if (isUday) {
+    tokens.push('UDAYA');
+    displayNames.push('Sarat Raja Uday Boddeda');
+  }
+
+  // Parsing Days
+  if (metaLower.includes('day-1') || metaLower.includes('day 1') || metaLower.includes('day1') || metaLower.includes('22nd feb event') || metaLower.includes('state rally')) {
+    tokens.push('DAY_1');
+    displayNames.push('Day 1');
+  }
+  
+  if (metaLower.includes('day-2') || metaLower.includes('day 2') || metaLower.includes('day2') || metaLower.includes('23rd feb event')) {
+    tokens.push('DAY_2');
+    displayNames.push('Day 2');
+  }
+  
+  if (metaLower.includes('day-3') || metaLower.includes('day 3') || metaLower.includes('day3') || metaLower.includes('valedictory')) {
+    tokens.push('DAY_3');
+    displayNames.push('Day 3');
+  }
+
+  // All Prime events 
+  if (metaLower.includes('all prime events')) {
+    displayNames.push('All Prime Events');
+  }
+
+  // Create clean name
+  let cleanName = '';
+  if (displayNames.length > 0) {
+    cleanName = displayNames.join(' + ');
+  } else if (rawMeta.includes('Ticket:')) {
+    cleanName = rawMeta.split('Ticket:')[1].trim();
+  } else {
+    cleanName = rawMeta;
+  }
+
+  return { cleanName, tokens };
+}
+
 let isSyncRunning = false;
 
 export async function syncRegistrations() {
@@ -52,7 +108,7 @@ export async function syncRegistrations() {
 
     // 3. Filter for NEW registrations only
     const newRegistrations = allRegistrations.filter(
-      (reg: any) => reg.registration_id && !existingIds.has(parseInt(reg.registration_id, 10))
+      (reg: any) => reg.registration_id && true
     );
 
     console.log(`[VTOPIA Sync] Fetched ${allRegistrations.length} total. Found ${newRegistrations.length} new records.`);
@@ -123,15 +179,21 @@ export async function syncRegistrations() {
           const paymentTimestamp = reg.payment_date ? BigInt(new Date(reg.payment_date).getTime()) : BigInt(Date.now());
           const totalAmount = reg.total ? Math.round(parseFloat(reg.total)) : 0; 
           
+          const parsedMeta = parseProductMeta(reg.product_meta);
+
           await prisma.order.upsert({
             where: { orderId: reg.order_id || `VTOPIA-${reg.registration_id}` },
-            update: {},
+            update: {
+              productMeta: parsedMeta.cleanName,
+              accessTokens: parsedMeta.tokens
+            },
             create: {
               registrationId: parseInt(reg.registration_id, 10),
               orderId: reg.order_id || `VTOPIA-${reg.registration_id}`,
               receiptId: reg.receipt_id,
               invoiceNumber: reg.invoice_number,
-              productMeta: reg.product_meta,
+              productMeta: parsedMeta.cleanName,
+              accessTokens: parsedMeta.tokens,
               fieldValues: reg.field_values ? JSON.parse(JSON.stringify(reg.field_values)) : null,
               totalAmount: totalAmount,
               quantity: 1,
