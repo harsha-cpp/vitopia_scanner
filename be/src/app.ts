@@ -13,12 +13,17 @@ import usersRoutes from "./routes/users.js";
 import dashboardRoutes from "./routes/dashboard.js";
 import authRoutes from "./routes/auth.js";
 import { errorHandler } from "./middleware/auth.js";
+import { getDatabaseReadiness } from "./db/readiness.js";
 
 type AppOptions = {
   enableNotFound?: boolean;
+  getDatabaseHealth?: () => Promise<{ connected: boolean; error?: string }>;
 };
 
-export const createApp = ({ enableNotFound = true }: AppOptions = {}): express.Express => {
+export const createApp = ({
+  enableNotFound = true,
+  getDatabaseHealth = getDatabaseReadiness,
+}: AppOptions = {}): express.Express => {
   const app = express();
 
   // Middleware — allow same-origin (combined server) + dev origins + droplet IP
@@ -49,11 +54,13 @@ export const createApp = ({ enableNotFound = true }: AppOptions = {}): express.E
   app.use(express.json());
 
   // Health check
-  app.get("/health", (req, res) => {
+  app.get("/health", async (req, res) => {
+    const db = await getDatabaseHealth();
     res.json({
       status: "ok",
       timestamp: new Date().toISOString(),
       service: "fest-entry-verification",
+      db,
     });
   });
 

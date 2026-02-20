@@ -1,22 +1,9 @@
 import { Router, Request, Response } from "express";
-import { ConvexHttpClient } from "convex/browser";
 import crypto from "crypto";
 import jwt from "jsonwebtoken";
-import { loadConvexApi } from "../utils/convex-api.js";
+import { getDashboardData } from "../db/dashboard.js";
 
 const router: Router = Router();
-
-let _convex: ConvexHttpClient | null = null;
-const getConvex = () => {
-  if (!_convex) {
-    const url = process.env.CONVEX_URL;
-    if (!url) throw new Error("CONVEX_URL environment variable is required");
-    _convex = new ConvexHttpClient(url);
-  }
-  return _convex;
-};
-
-const getApi = async () => loadConvexApi();
 
 const DASHBOARD_PIN = process.env.DASHBOARD_PIN || "260226";
 const MAX_ATTEMPTS = 5;
@@ -111,8 +98,7 @@ router.get("/data", async (req: Request, res: Response) => {
   if (!requireDashboardToken(req, res)) return;
 
   try {
-    const api = await getApi();
-    const data = await getConvex().query(api.orders.getDashboardData, {});
+    const data = await getDashboardData();
     res.json({ success: true, data });
   } catch (error) {
     console.error("Dashboard data error:", error);
