@@ -5,6 +5,30 @@ import * as ordersRepo from "../db/orders.js";
 const router: Router = Router();
 
 /**
+ * GET /api/orders
+ * List orders with filters
+ */
+router.get("/", async (req: Request, res: Response) => {
+  try {
+    const { search, paymentStatus, eventId, page, limit } = req.query;
+    
+    const result = await ordersRepo.listOrders({
+      search: search as string,
+      paymentStatus: paymentStatus as string,
+      eventId: eventId as string,
+      page: page ? parseInt(page as string) : 1,
+      limit: limit ? parseInt(limit as string) : 50,
+    });
+    
+    res.json({ success: true, data: result });
+  } catch (error) {
+    console.error("Error listing orders:", error);
+    res.status(500).json({ success: false, error: "Failed to list orders" });
+  }
+});
+
+
+/**
  * POST /api/orders
  * Create a new order
  */
@@ -150,3 +174,32 @@ router.get("/:orderId/qr", async (req: Request, res: Response) => {
 });
 
 export default router;
+
+
+/**
+ * PUT /api/orders/:orderId
+ * Update an order
+ */
+router.put("/:orderId", async (req: Request, res: Response) => {
+  try {
+    const updated = await ordersRepo.updateOrder(req.params.orderId, req.body);
+    res.json({ success: true, data: updated });
+  } catch (error: any) {
+    console.error("Error updating order:", error);
+    res.status(400).json({ success: false, error: error.message || "Failed to update order" });
+  }
+});
+
+/**
+ * DELETE /api/orders/:orderId
+ * Delete an order
+ */
+router.delete("/:orderId", async (req: Request, res: Response) => {
+  try {
+    await ordersRepo.deleteOrder(req.params.orderId);
+    res.json({ success: true, message: "Order deleted" });
+  } catch (error: any) {
+    console.error("Error deleting order:", error);
+    res.status(400).json({ success: false, error: error.message || "Failed to delete order" });
+  }
+});

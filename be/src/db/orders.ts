@@ -326,3 +326,104 @@ export const ORDER_PAYMENT_STATUSES: Readonly<OrderPaymentStatus[]> = [
   "failed",
   "refunded",
 ] as const;
+
+
+export async function listOrders(filters: {
+  search?: string;
+  paymentStatus?: string;
+  eventId?: string;
+  page?: number;
+  limit?: number;
+}) {
+  const page = filters.page || 1;
+  const limit = filters.limit || 50;
+  const skip = (page - 1) * limit;
+
+  const where: any = {};
+  
+  if (filters.paymentStatus) {
+    where.paymentStatus = filters.paymentStatus;
+  }
+  
+  if (filters.eventId) {
+    where.eventId = filters.eventId;
+  }
+
+  if (filters.search) {
+    where.OR = [
+      { orderId: { contains: filters.search, mode: 'insensitive' } },
+      { invoiceNumber: { contains: filters.search, mode: 'insensitive' } },
+      { user: { name: { contains: filters.search, mode: 'insensitive' } } },
+      { user: { email: { contains: filters.search, mode: 'insensitive' } } }
+    ];
+  }
+
+  const [orders, total] = await Promise.all([
+    prisma.order.findMany({
+      where,
+      include: {
+        user: true,
+        event: true,
+      },
+      orderBy: { createdAt: 'desc' },
+      skip,
+      take: limit,
+    }),
+    prisma.order.count({ where })
+  ]);
+
+  return {
+    orders: orders.map(order => {
+      const mappedUser = order.user ? mapUser(order.user) : null;
+      const mappedEvent = order.event ? mapEvent(order.event) : null;
+      return {
+        ...mapOrder(
+          order,
+          mappedUser ? mappedUser._id : undefined,
+          mappedEvent ? mappedEvent._id : undefined
+        ),
+        user: mappedUser,
+        event: mappedEvent,
+      };
+    }),
+    total,
+    page,
+    totalPages: Math.ceil(total / limit)
+  };
+}
+
+
+export async function updateOrder(orderId: string, data: any) {
+  const order = await prisma.order.findFirst({ where: { orderId } });
+  if (!order) throw new Error("Order not found");
+
+  const updated = await prisma.order.update({
+    where: { id: order.id },
+    data: {
+      paymentStatus: data.paymentStatus !== undefined ? data.paymentStatus : order.paymentStatus,
+      checkedIn: data.checkedIn !== undefined ? data.checkedIn : order.checkedIn,
+      quantity: data.quantity !== undefined ? data.quantity : order.quantity,
+      updatedAt: BigInt(Date.now())
+    },
+    include: { user: true, event: true }
+  });
+
+  const mappedUser = updated.user ? mapUser(updated.user) : null;
+  const mappedEvent = updated.event ? mapEvent(updated.event) : null;
+
+  return {
+    ...mapOrder(updated, mappedUser ? mappedUser._id : undefined, mappedEvent ? mappedEvent._id : undefined),
+    user: mappedUser,
+    event: mappedEvent
+  };
+}
+
+export async function deleteOrder(orderId: string) {
+  const order = await prisma.order.findFirst({ where: { orderId } });
+  if (!order) throw new Error("Order not found");
+
+  await prisma.order.delete({
+    where: { id: order.id }
+  });
+  return { success: true };
+}

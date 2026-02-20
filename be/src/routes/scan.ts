@@ -59,8 +59,8 @@ router.post(
                 checkedInAt: orderInfo.checkedInAt,
               };
               
-              const statusStr = orderInfo.checkedIn ? "Already Scanned" : "Not Scanned";
-              enhancedError = `Invalid QR Sig (${orderInfo.event?.name || "Unknown Event"} - ${statusStr})`;
+              const statusStr = orderInfo.checkedIn ? "\n(Already Scanned)" : "";
+              enhancedError = `Ticket is for:\n${orderInfo.event?.name || "Unknown Event"}${statusStr}`;
             }
           } catch (_) { /* best-effort */ }
         }
@@ -262,8 +262,8 @@ router.post(
                 checkedInAt: orderInfo.checkedInAt,
               };
               
-              const statusStr = orderInfo.checkedIn ? "Already Scanned" : "Not Scanned";
-              enhancedError = `Invalid QR Sig (${orderInfo.event?.name || "Unknown Event"} - ${statusStr})`;
+              const statusStr = orderInfo.checkedIn ? "\n(Already Scanned)" : "";
+              enhancedError = `Ticket is for:\n${orderInfo.event?.name || "Unknown Event"}${statusStr}`;
             }
           } catch (_) { /* best-effort */ }
         }
