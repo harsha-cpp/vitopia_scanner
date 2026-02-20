@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import Image from "next/image";
 import {
   Camera,
@@ -16,7 +16,6 @@ import {
   ChevronDown,
   ChevronUp,
   LayoutDashboard,
-  Lock,
 } from "lucide-react";
 import { verifyTicket, ScanResult, getEvents, Event } from "@/lib/api";
 
@@ -33,11 +32,52 @@ interface ScanRecord {
   checkedInAt?: number;
 }
 
+const EVENT_NAME_BY_TOKEN: Record<string, string> = {
+  DAY_1: "Day-1",
+  DAY_2: "Day-2",
+  DAY_3: "Day-3",
+  PRANAV: "Mr. Pranav Sharma",
+  UDAYA: "Mr. Sarat Raja Uday Boddeda",
+  TSHIRT: "T-Shirt Distribution",
+};
+
+const EVENT_SORT_BY_TOKEN: Record<string, number> = {
+  DAY_1: 1,
+  DAY_2: 2,
+  DAY_3: 3,
+  PRANAV: 4,
+  UDAYA: 5,
+  TSHIRT: 6,
+};
+
 function formatEventName(name: string): string {
   if (name === "Vitopia2026-Day1") return "Vitopia Day 1";
   if (name === "Vitopia2026-Day2") return "Vitopia Day 2";
   if (name === "Vitopia2026-Day3") return "Vitopia Day 3";
+  if (name.includes("Mr. Pranav Sharma")) return "Mr. Pranav Sharma";
+  if (name.includes("Sarat Raja Uday Boddeda")) return "Mr. Sarat Raja Uday Boddeda";
   return name;
+}
+
+function getEventDisplayName(event: Event): string {
+  const token = event.accessToken ?? "";
+  return EVENT_NAME_BY_TOKEN[token] ?? formatEventName(event.name);
+}
+
+function sortEventsForScanner(items: Event[]): Event[] {
+  return [...items].sort((a, b) => {
+    const aRank = a.scanOrder ?? EVENT_SORT_BY_TOKEN[a.accessToken ?? ""] ?? Number.MAX_SAFE_INTEGER;
+    const bRank = b.scanOrder ?? EVENT_SORT_BY_TOKEN[b.accessToken ?? ""] ?? Number.MAX_SAFE_INTEGER;
+    if (aRank !== bRank) {
+      return aRank - bRank;
+    }
+
+    if (a.date !== b.date) {
+      return a.date - b.date;
+    }
+
+    return a.name.localeCompare(b.name);
+  });
 }
 
 function formatTime(timestamp?: number): string {
@@ -89,6 +129,7 @@ export default function Home() {
 
   const verifiedScans = scanHistory.filter((s) => s.status === "success");
   const rejectedScans = scanHistory.filter((s) => s.status === "failed");
+  const orderedEvents = useMemo(() => sortEventsForScanner(events), [events]);
 
   useEffect(() => {
     loadEvents();
@@ -348,66 +389,38 @@ export default function Home() {
 
           {!loading && (
             <div className="space-y-3">
-              {events
-                .filter((event) => event.name === "Vitopia2026-Day1")
-                .map((event) => (
-                  <button
-                    key={event._id}
-                    onClick={() => setSelectedEvent(event)}
-                    className="w-full bg-[#0a0a0a] border border-[#1a1a1a] rounded-xl p-4 text-left active:scale-[0.98] transition-all"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-lg bg-[#1a1a1a]">
-                        <Calendar className="w-5 h-5 text-[#9AE600]" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h2 className="text-base font-semibold text-white truncate">
-                          {formatEventName(event.name)}
-                        </h2>
-                        <p className="text-xs text-[#99A1AF]">
-                          {new Date(event.date).toLocaleDateString("en-IN", {
-                            day: "numeric",
-                            month: "short",
-                            year: "numeric",
-                          })} • {event.venue}
-                        </p>
-                      </div>
-                      <Camera className="w-5 h-5 text-[#9AE600]" />
+              {orderedEvents.map((event) => (
+                <button
+                  key={event._id}
+                  onClick={() => setSelectedEvent(event)}
+                  className="w-full bg-[#0a0a0a] border border-[#1a1a1a] rounded-xl p-4 text-left active:scale-[0.98] transition-all"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-[#1a1a1a]">
+                      <Calendar className="w-5 h-5 text-[#9AE600]" />
                     </div>
-                  </button>
-                ))}
+                    <div className="flex-1 min-w-0">
+                      <h2 className="text-base font-semibold text-white truncate">
+                        {getEventDisplayName(event)}
+                      </h2>
+                      <p className="text-xs text-[#99A1AF]">
+                        {new Date(event.date).toLocaleDateString("en-IN", {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                        })} • {event.venue}
+                      </p>
+                    </div>
+                    <Camera className="w-5 h-5 text-[#9AE600]" />
+                  </div>
+                </button>
+              ))}
 
-              {events.filter((event) => event.name === "Vitopia2026-Day1").length === 0 && (
+              {orderedEvents.length === 0 && (
                 <div className="text-center py-10 text-[#99A1AF]">
-                  <p>No Day 1 events available</p>
+                  <p>No events available</p>
                 </div>
               )}
-
-              <div className="w-full bg-[#0a0a0a] border border-[#1a1a1a] rounded-xl p-4 opacity-50 cursor-not-allowed">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-[#1a1a1a]">
-                    <Calendar className="w-5 h-5 text-[#555]" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h2 className="text-base font-semibold text-white truncate">Vitopia Day 2</h2>
-                    <p className="text-xs text-[#99A1AF]">23 Feb 2026 • VIT-AP Campus</p>
-                  </div>
-                  <Lock className="w-4 h-4 text-[#555]" />
-                </div>
-              </div>
-
-              <div className="w-full bg-[#0a0a0a] border border-[#1a1a1a] rounded-xl p-4 opacity-50 cursor-not-allowed">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-[#1a1a1a]">
-                    <Calendar className="w-5 h-5 text-[#555]" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h2 className="text-base font-semibold text-white truncate">Vitopia Day 3</h2>
-                    <p className="text-xs text-[#99A1AF]">24 Feb 2026 • VIT-AP Campus</p>
-                  </div>
-                  <Lock className="w-4 h-4 text-[#555]" />
-                </div>
-              </div>
 
               <div className="pt-3">
                 <a
@@ -452,7 +465,7 @@ export default function Home() {
               <ArrowLeft className="w-5 h-5 text-[#9AE600]" />
             </button>
             <div>
-              <h1 className="text-base font-semibold text-white">{formatEventName(selectedEvent.name)}</h1>
+              <h1 className="text-base font-semibold text-white">{getEventDisplayName(selectedEvent)}</h1>
               <p className="text-[10px] text-[#99A1AF]">{selectedEvent.venue}</p>
             </div>
           </div>
@@ -573,7 +586,12 @@ export default function Home() {
               </h2>
               {lastResult?.data && (
                 <p className={`text-sm ${status === "success" || status === "already_used" ? "text-black/70" : "text-white/70"}`}>
-                  {lastResult.data.user.name}
+                  {lastResult.data.user?.name ?? "Unknown attendee"}
+                </p>
+              )}
+              {lastResult?.data?.tshirt?.eligible && (
+                <p className={`text-xs ${status === "success" || status === "already_used" ? "text-black/70" : "text-white/70"}`}>
+                  T-Shirt: {lastResult.data.tshirt.size || "NA"} / {lastResult.data.tshirt.color || "NA"}
                 </p>
               )}
               {status === "already_used" && lastResult?.checkedInAt && (
