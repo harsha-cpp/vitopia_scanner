@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -18,6 +18,45 @@ import { verifyTicket, ScanResult, getEvents, Event } from "@/lib/api";
 
 type ScanStatus = "idle" | "scanning" | "success" | "error" | "already_used";
 
+const EVENT_NAME_BY_TOKEN: Record<string, string> = {
+  DAY_1: "Day-1",
+  DAY_2: "Day-2",
+  DAY_3: "Day-3",
+  PRANAV: "Mr. Pranav Sharma",
+  UDAYA: "Mr. Sarat Raja Uday Boddeda",
+  TSHIRT: "T-Shirt Distribution",
+};
+
+const EVENT_SORT_BY_TOKEN: Record<string, number> = {
+  DAY_1: 1,
+  DAY_2: 2,
+  DAY_3: 3,
+  PRANAV: 4,
+  UDAYA: 5,
+  TSHIRT: 6,
+};
+
+function getEventDisplayName(event: Event): string {
+  const token = event.accessToken ?? "";
+  return EVENT_NAME_BY_TOKEN[token] ?? event.name;
+}
+
+function sortEventsForScanner(items: Event[]): Event[] {
+  return [...items].sort((a, b) => {
+    const aRank = a.scanOrder ?? EVENT_SORT_BY_TOKEN[a.accessToken ?? ""] ?? Number.MAX_SAFE_INTEGER;
+    const bRank = b.scanOrder ?? EVENT_SORT_BY_TOKEN[b.accessToken ?? ""] ?? Number.MAX_SAFE_INTEGER;
+    if (aRank !== bRank) {
+      return aRank - bRank;
+    }
+
+    if (a.date !== b.date) {
+      return a.date - b.date;
+    }
+
+    return a.name.localeCompare(b.name);
+  });
+}
+
 export default function ScannerPage() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -33,6 +72,7 @@ export default function ScannerPage() {
   const [scanCount, setScanCount] = useState({ success: 0, failed: 0 });
   const lastScannedRef = useRef<string>("");
   const scanTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const orderedEvents = useMemo(() => sortEventsForScanner(events), [events]);
 
   // Load events on mount
   useEffect(() => {
@@ -286,9 +326,9 @@ export default function ScannerPage() {
                 className="w-full px-4 py-2 bg-black border border-[#1a1a1a] rounded-lg text-white focus:border-[#9AE600] focus:outline-none transition-colors"
               >
                 <option value="">All Events</option>
-                {events.map((event) => (
+                {orderedEvents.map((event) => (
                   <option key={event._id} value={event._id}>
-                    {event.name}
+                    {getEventDisplayName(event)}
                   </option>
                 ))}
               </select>
@@ -354,8 +394,13 @@ export default function ScannerPage() {
               </h2>
               {lastResult?.data && (
                 <div className={`text-center ${status === "success" || status === "already_used" ? "text-black/80" : "text-white/80"}`}>
-                  <p className="text-lg font-semibold">{lastResult.data.user.name}</p>
+                  <p className="text-lg font-semibold">{lastResult.data.user?.name ?? "Unknown attendee"}</p>
                   <p className="text-sm">{lastResult.data.quantity} ticket(s)</p>
+                  {lastResult.data.tshirt?.eligible && (
+                    <p className="text-xs mt-1">
+                      T-Shirt: {lastResult.data.tshirt.size || "NA"} / {lastResult.data.tshirt.color || "NA"}
+                    </p>
+                  )}
                 </div>
               )}
               {lastResult?.error && (
@@ -447,6 +492,12 @@ export default function ScannerPage() {
                 <div className="flex justify-between">
                   <span className="text-[#99A1AF]">Order</span>
                   <span className="font-mono text-xs">{lastResult.data.orderId}</span>
+                </div>
+              )}
+              {lastResult.data?.tshirt?.eligible && (
+                <div className="flex justify-between">
+                  <span className="text-[#99A1AF]">T-Shirt</span>
+                  <span>{lastResult.data.tshirt.size || "NA"} / {lastResult.data.tshirt.color || "NA"}</span>
                 </div>
               )}
               {lastResult.responseTime && (
