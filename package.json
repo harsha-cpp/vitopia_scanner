@@ -1,13 +1,14 @@
 {
-  "name": "sristi",
+  "name": "vitopia-fest",
   "version": "1.0.0",
   "private": true,
   "description": "Fest Entry Verification System - Monorepo",
   "scripts": {
-    "dev": "pnpm --filter fe dev & pnpm --filter be dev & pnpm --filter admin dev",
+    "dev": "pnpm --filter fe dev --port 3000 & pnpm --filter be dev",
     "dev:fe": "pnpm --filter fe dev",
     "dev:be": "pnpm --filter be dev:server",
-    "dev:admin": "pnpm --filter admin dev",
+    "dev:admin": "pnpm --filter admin dev --port 3002",
+    "dev:all": "pnpm --filter fe dev --port 3000 & pnpm --filter be dev & pnpm --filter admin dev --port 3002",
     "dev:convex": "pnpm --filter be dev:convex",
     "build": "pnpm --filter fe build & pnpm --filter be build & pnpm --filter admin build",
     "build:fe": "pnpm --filter fe build",
@@ -21,5 +22,10 @@
     "redis:logs": "docker compose logs -f redis",
     "start:all": "pnpm run redis:up && pnpm run dev"
   },
-  "packageManager": "pnpm@10.27.0"
+  "packageManager": "pnpm@10.27.0",
+  "dependencies": {
+    "axios": "^1.13.5",
+    "node-cron": "^4.2.1",
+    "pg": "^8.18.0"
+  }
 }
