@@ -228,7 +228,9 @@ function mapCheckInContext(
   event: ScanEventContext | null;
 } {
   const fallbackEvent = order.event;
-  const effectiveEvent = scannedEvent ?? fallbackEvent;
+  // If entry is denied or even if it passes, we want to show what the user ACTUALLY bought (fallbackEvent)
+  // rather than the gate they are currently trying to enter (scannedEvent).
+  const effectiveEvent = fallbackEvent;
 
   return {
     eventId: toExternalId(effectiveEvent.id, effectiveEvent.convexId),

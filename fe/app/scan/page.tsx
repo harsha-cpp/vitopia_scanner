@@ -401,7 +401,7 @@ export default function ScannerPage() {
                 <div className={`text-center ${status === "success" || status === "already_used" ? "text-black/80" : "text-white/80"}`}>
                   <p className="text-lg font-semibold">{lastResult.data.user?.name ?? "Unknown attendee"}</p>
                   <p className="text-sm">{lastResult.data.quantity} ticket(s)</p>
-                  {lastResult?.data?.event && <p className="text-sm mt-1 opacity-80">{getEventDisplayName(lastResult.data.event as Event)}</p>}
+                  {lastResult?.data?.event && <p className="text-sm mt-1 opacity-80">{getEventDisplayName(lastResult.data.event as Event)} • {new Date().toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" })}</p>}
                   {lastResult.data.tshirt?.eligible && (
                     <p className="text-xs mt-1">
                       T-Shirt: {lastResult.data.tshirt.size || "NA"} / {lastResult.data.tshirt.color || "NA"}

@@ -944,11 +944,19 @@ export default function Home() {
 
                 {/* Event */}
                 {lastResult?.data?.event && (
-                  <div className="px-4 py-3">
-                    <p className="text-[10px] text-[#6b7280] uppercase tracking-wider">Event</p>
-                    <p className="text-sm text-white font-medium mt-0.5">
-                      {getEventDisplayName(lastResult.data.event as Event)}
-                    </p>
+                  <div className="px-4 py-3 border-b border-[#2a2a2a] last:border-0 flex justify-between items-center">
+                    <div>
+                      <p className="text-[10px] text-[#6b7280] uppercase tracking-wider">Registered For</p>
+                      <p className="text-sm text-white font-medium mt-0.5">
+                        {getEventDisplayName(lastResult.data.event as Event)}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[10px] text-[#6b7280] uppercase tracking-wider">Scanned At</p>
+                      <p className="text-sm text-white font-medium mt-0.5">
+                        {formatTime(Date.now())}
+                      </p>
+                    </div>
                   </div>
                 )}
 

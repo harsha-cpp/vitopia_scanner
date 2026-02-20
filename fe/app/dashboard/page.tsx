@@ -12,6 +12,18 @@ import {
   LogOut,
 } from "lucide-react";
 
+
+function formatEventName(name: string): string {
+  if (!name) return "—";
+  if (name === "Vitopia2026-Day1") return "Vitopia Day 1";
+  if (name === "Vitopia2026-Day2") return "Vitopia Day 2";
+  if (name === "Vitopia2026-Day3") return "Vitopia Day 3";
+  if (name.includes("Mr. Pranav Sharma")) return "Mr. Pranav Sharma";
+  if (name.includes("Sarat Raja Uday Boddeda") || name.includes("Mr. Sarat Raja")) return "Mr. Sarat Raja Uday Boddeda";
+  if (name.includes("T-Shirt Distribution") || name.includes("VITopia 2026 T-Shirt")) return "T-Shirt Distribution";
+  return name;
+}
+
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL ||
   (process.env.NODE_ENV === "development" ? "http://localhost:3001" : "");
