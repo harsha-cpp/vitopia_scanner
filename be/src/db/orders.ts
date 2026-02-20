@@ -71,6 +71,7 @@ export interface MappedOrder {
   checkedInAt: number | null;
   checkedInBy: string | null;
   checkedInGate: string | null;
+  mailed: boolean;
   createdAt: number;
   updatedAt: number;
 }
@@ -135,7 +136,7 @@ function mapOrder(
     productMeta: dbOrder.productMeta,
     invoiceNumber: dbOrder.invoiceNumber,
     sourceEventCode: dbOrder.sourceEventCode,
-    registrationId: dbOrder.registrationId,
+    registrationId: dbOrder.registrationId ? dbOrder.registrationId.toString() : null,
     fieldValues: dbOrder.fieldValues,
     accessTokens: dbOrder.accessTokens,
     tshirtEligible: dbOrder.tshirtEligible,
@@ -150,6 +151,7 @@ function mapOrder(
     checkedInAt: dbOrder.checkedInAt ? Number(dbOrder.checkedInAt) : null,
     checkedInBy: dbOrder.checkedInBy,
     checkedInGate: dbOrder.checkedInGate,
+    mailed: dbOrder.mailed,
     createdAt: Number(dbOrder.createdAt),
     updatedAt: Number(dbOrder.updatedAt),
   };
@@ -240,7 +242,7 @@ export async function create(data: {
         productMeta: data.productMeta,
         invoiceNumber: data.invoiceNumber,
         sourceEventCode: data.sourceEventCode,
-        registrationId: data.registrationId,
+        registrationId: data.registrationId ? parseInt(data.registrationId, 10) : undefined,
         fieldValues,
         accessTokens,
         tshirtEligible: data.tshirtEligible ?? false,
@@ -332,6 +334,7 @@ export async function listOrders(filters: {
   search?: string;
   paymentStatus?: string;
   eventId?: string;
+  mailed?: string;
   page?: number;
   limit?: number;
 }) {
@@ -347,6 +350,12 @@ export async function listOrders(filters: {
   
   if (filters.eventId) {
     where.eventId = filters.eventId;
+  }
+
+  if (filters.mailed === "true") {
+    where.mailed = true;
+  } else if (filters.mailed === "false") {
+    where.mailed = false;
   }
 
   if (filters.search) {
@@ -403,6 +412,7 @@ export async function updateOrder(orderId: string, data: any) {
       paymentStatus: data.paymentStatus !== undefined ? data.paymentStatus : order.paymentStatus,
       checkedIn: data.checkedIn !== undefined ? data.checkedIn : order.checkedIn,
       quantity: data.quantity !== undefined ? data.quantity : order.quantity,
+      mailed: data.mailed !== undefined ? data.mailed : order.mailed,
       updatedAt: BigInt(Date.now())
     },
     include: { user: true, event: true }
@@ -426,4 +436,12 @@ export async function deleteOrder(orderId: string) {
     where: { id: order.id }
   });
   return { success: true };
+}
+
+export async function markOrdersMailed(orderIds: string[]) {
+  const result = await prisma.order.updateMany({
+    where: { orderId: { in: orderIds } },
+    data: { mailed: true, updatedAt: BigInt(Date.now()) },
+  });
+  return { updated: result.count };
 }

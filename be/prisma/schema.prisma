@@ -61,6 +61,7 @@ model Event {
   isActive    Boolean @map("is_active")
   accessToken String? @unique @map("access_token")
   category    EventCategory @default(day)
+  sourceEventCode Int? @unique @map("source_event_code")
   scanOrder   Int @default(0) @map("scan_order")
   createdAt   BigInt  @map("created_at")
 
@@ -82,7 +83,7 @@ model Order {
   productMeta   String?       @map("product_meta")
   invoiceNumber String?       @map("invoice_number")
   sourceEventCode Int?        @map("source_event_code")
-  registrationId String?      @map("registration_id")
+  registrationId Int?         @unique @map("registration_id")
   fieldValues   Json?         @map("field_values")
   accessTokens  String[]      @default([]) @map("access_tokens")
   tshirtEligible Boolean      @default(false) @map("tshirt_eligible")
@@ -97,6 +98,7 @@ model Order {
   checkedInAt   BigInt?       @map("checked_in_at")
   checkedInBy   String?       @map("checked_in_by")
   checkedInGate String?       @map("checked_in_gate")
+  mailed        Boolean       @default(false)
   createdAt     BigInt        @map("created_at")
   updatedAt     BigInt        @map("updated_at")
 

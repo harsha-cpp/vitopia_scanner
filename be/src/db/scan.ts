@@ -207,7 +207,7 @@ function mapOrderContext(order: OrderWithRelations): ScanOrderContext {
     quantity: order.quantity,
     receiptId: order.receiptId,
     invoiceNumber: order.invoiceNumber,
-    registrationId: order.registrationId,
+    registrationId: order.registrationId ? order.registrationId.toString() : null,
     productMeta: order.productMeta,
     accessTokens: order.accessTokens,
     tshirt: {
