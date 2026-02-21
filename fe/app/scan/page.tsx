@@ -332,7 +332,7 @@ export default function ScannerPage() {
               >
                 <option value="">All Events</option>
                 {orderedEvents.map((event) => (
-                  <option key={event._id} value={event._id}>
+                  <option key={event.id} value={event.id}>
                     {getEventDisplayName(event)}
                   </option>
                 ))}

@@ -67,7 +67,7 @@ export default function EventDetailPage({
       // Create order
       const orderResult = await createOrder({
         userId: userResult.userId,
-        eventId: event._id,
+        eventId: event.id,
         quantity,
       });
 

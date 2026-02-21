@@ -303,7 +303,7 @@ export default function SendMailsPage() {
               >
                 <option value="">All Events</option>
                 {events.map(ev => (
-                  <option key={ev._id} value={ev._id}>{ev.name}</option>
+                  <option key={ev.id} value={ev.id}>{ev.name}</option>
                 ))}
               </select>
             </div>
@@ -492,7 +492,7 @@ export default function SendMailsPage() {
               </thead>
               <tbody className="divide-y divide-zinc-800/50">
                 {orders.map((order) => (
-                  <tr key={order._id} className={`transition-colors ${selectedOrderIds.has(order.orderId) ? "bg-[#9AE600]/5" : "hover:bg-zinc-800/30"}`}>
+                  <tr key={order.id} className={`transition-colors ${selectedOrderIds.has(order.orderId) ? "bg-[#9AE600]/5" : "hover:bg-zinc-800/30"}`}>
                     <td className="px-6 py-4 text-center">
                       <button
                         type="button"

@@ -69,7 +69,7 @@ export async function getDashboardData(): Promise<DashboardData> {
       );
 
       return {
-        eventId: event.convexId || event.id,
+        eventId: event.id,
         eventName: event.name,
         sold,
         checkedIn: checkedInCount,

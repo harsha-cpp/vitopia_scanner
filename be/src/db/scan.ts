@@ -8,9 +8,6 @@ import type {
 
 const prisma = basePrisma as unknown as PrismaClient;
 
-const UUID_REGEX =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
 type OrderWithRelations = Prisma.OrderGetPayload<{
   include: { user: true; event: true };
 }>;
@@ -37,7 +34,7 @@ export interface ScanOrderContext {
   quantity: number;
   receiptId: string | null;
   invoiceNumber: string | null;
-  registrationId: string | null;
+  registrationId: number | null;
   productMeta: string | null;
   accessTokens: string[];
   tshirt: ScanTshirtContext;
@@ -143,10 +140,7 @@ export interface ScanHistoryResult {
 }
 
 export interface MappedScanStatsEvent {
-  _id: string;
-  _creationTime: number;
   id: string;
-  convexId: string | null;
   name: string;
   description: string;
   date: number;
@@ -168,16 +162,9 @@ export interface ScanStats {
   capacityRemaining: number;
 }
 
-function toExternalId(id: string, convexId: string | null): string {
-  return convexId ?? id;
-}
-
 function mapEvent(event: Event): MappedScanStatsEvent {
   return {
-    _id: toExternalId(event.id, event.convexId),
-    _creationTime: Number(event.createdAt),
     id: event.id,
-    convexId: event.convexId,
     name: event.name,
     description: event.description,
     date: Number(event.date),
@@ -209,7 +196,7 @@ function mapOrderContext(order: OrderWithRelations): ScanOrderContext {
     quantity: order.quantity,
     receiptId: order.receiptId,
     invoiceNumber: order.invoiceNumber,
-    registrationId: order.registrationId ? order.registrationId.toString() : null,
+    registrationId: order.registrationId ?? null,
     productMeta: order.productMeta,
     accessTokens: order.accessTokens,
     tshirt: {
@@ -235,7 +222,7 @@ function mapCheckInContext(
   const effectiveEvent = fallbackEvent;
 
   return {
-    eventId: toExternalId(effectiveEvent.id, effectiveEvent.convexId),
+    eventId: effectiveEvent.id,
     order: mapOrderContext(order),
     user: order.user
       ? {
@@ -247,27 +234,19 @@ function mapCheckInContext(
   };
 }
 
-function isUuid(value: string): boolean {
-  return UUID_REGEX.test(value);
-}
-
 function hasEventAccess(order: OrderWithRelations, event: Event): boolean {
   if (event.accessToken) {
     return order.accessTokens.includes(event.accessToken);
   }
 
-  return event.id === order.event.id || (!!event.convexId && event.convexId === order.event.convexId);
+  return event.id === order.event.id;
 }
 
 async function resolveEventById(
   tx: Pick<PrismaClient, "event">,
   eventId: string
 ): Promise<Event | null> {
-  return tx.event.findFirst({
-    where: isUuid(eventId)
-      ? { OR: [{ id: eventId }, { convexId: eventId }] }
-      : { convexId: eventId },
-  });
+  return tx.event.findUnique({ where: { id: eventId } });
 }
 
 export async function checkIn(input: {
@@ -469,7 +448,7 @@ export async function validate(
     order: {
       orderId: order.orderId,
       quantity: order.quantity,
-      eventId: toExternalId(resolvedEvent.id, resolvedEvent.convexId),
+      eventId: resolvedEvent.id,
       accessTokens: order.accessTokens,
       tshirt: {
         eligible: order.tshirtEligible,
@@ -560,7 +539,7 @@ export async function getScanHistoryByOrderId(
   const purchasedEventsById = new Map<string, PurchasedEventSummary>();
   for (const event of purchasedEventsRaw) {
     purchasedEventsById.set(event.id, {
-      id: toExternalId(event.id, event.convexId),
+      id: event.id,
       name: event.name,
       accessToken: event.accessToken,
       category: event.category,
@@ -568,8 +547,8 @@ export async function getScanHistoryByOrderId(
   }
 
   const purchasedEvents = Array.from(purchasedEventsById.values()).sort((a, b) => {
-    const eventA = purchasedEventsRaw.find((event) => toExternalId(event.id, event.convexId) === a.id);
-    const eventB = purchasedEventsRaw.find((event) => toExternalId(event.id, event.convexId) === b.id);
+    const eventA = purchasedEventsRaw.find((event) => event.id === a.id);
+    const eventB = purchasedEventsRaw.find((event) => event.id === b.id);
 
     const rankA = eventA?.scanOrder ?? Number.MAX_SAFE_INTEGER;
     const rankB = eventB?.scanOrder ?? Number.MAX_SAFE_INTEGER;
@@ -602,11 +581,11 @@ export async function getScanHistoryByOrderId(
       timestamp: Number(log.timestamp),
       event: log.event
         ? {
-          id: toExternalId(log.event.id, log.event.convexId),
-          name: log.event.name,
-          accessToken: log.event.accessToken,
-          category: log.event.category,
-        }
+            id: log.event.id,
+            name: log.event.name,
+            accessToken: log.event.accessToken,
+            category: log.event.category,
+          }
         : null,
     })),
   };

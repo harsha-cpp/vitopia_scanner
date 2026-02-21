@@ -35,7 +35,7 @@ async function fetchApi<T>(
 
 // Events
 export interface Event {
-  _id: string;
+  id: string;
   name: string;
   description: string;
   date: number;
@@ -74,7 +74,7 @@ export async function getEventStats(id: string): Promise<EventStats | null> {
 
 // Users
 export interface User {
-  _id: string;
+  id: string;
   email: string;
   name: string;
   phone?: string;
@@ -101,7 +101,7 @@ export async function getUserByEmail(email: string): Promise<User | null> {
 
 // Orders
 export interface Order {
-  _id: string;
+  id: string;
   orderId: string;
   userId: string;
   eventId: string;

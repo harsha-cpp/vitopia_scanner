@@ -11,17 +11,9 @@ import type {
 
 const prisma = basePrisma as unknown as PrismaClient;
 
-const UUID_REGEX =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-type UserResolverClient = Pick<PrismaClient, "user">;
-type EventResolverClient = Pick<PrismaClient, "event">;
 
 export interface MappedOrderUser {
-  _id: string;
-  _creationTime: number;
   id: string;
-  convexId: string | null;
   email: string;
   name: string;
   phone: string | null;
@@ -30,10 +22,7 @@ export interface MappedOrderUser {
 }
 
 export interface MappedOrderEvent {
-  _id: string;
-  _creationTime: number;
   id: string;
-  convexId: string | null;
   name: string;
   description: string;
   date: number;
@@ -49,16 +38,13 @@ export interface MappedOrderEvent {
 
 export interface MappedOrder {
   qrToken: string | null;
-  _id: string;
-  _creationTime: number;
   id: string;
-  convexId: string | null;
   orderId: string;
   receiptId: string | null;
   productMeta: string | null;
   invoiceNumber: string | null;
   sourceEventCode: number | null;
-  registrationId: string | null;
+  registrationId: number | null;
   fieldValues: unknown;
   accessTokens: string[];
   tshirtEligible: boolean;
@@ -97,10 +83,7 @@ function generateOrderId(): string {
 
 function mapUser(dbUser: User): MappedOrderUser {
   return {
-    _id: dbUser.convexId ?? dbUser.id,
-    _creationTime: Number(dbUser.createdAt),
     id: dbUser.id,
-    convexId: dbUser.convexId,
     email: dbUser.email,
     name: dbUser.name,
     phone: dbUser.phone,
@@ -111,10 +94,7 @@ function mapUser(dbUser: User): MappedOrderUser {
 
 function mapEvent(dbEvent: Event): MappedOrderEvent {
   return {
-    _id: dbEvent.convexId ?? dbEvent.id,
-    _creationTime: Number(dbEvent.createdAt),
     id: dbEvent.id,
-    convexId: dbEvent.convexId,
     name: dbEvent.name,
     description: dbEvent.description,
     date: Number(dbEvent.date),
@@ -130,29 +110,24 @@ function mapEvent(dbEvent: Event): MappedOrderEvent {
 }
 
 function mapOrder(
-  dbOrder: Order,
-  mappedUserId?: string,
-  mappedEventId?: string
+  dbOrder: Order
 ): MappedOrder {
   return {
-    _id: dbOrder.convexId ?? dbOrder.id,
-    _creationTime: Number(dbOrder.createdAt),
     id: dbOrder.id,
-    convexId: dbOrder.convexId,
     orderId: dbOrder.orderId,
     qrToken: dbOrder.qrToken,
     receiptId: dbOrder.receiptId,
     productMeta: dbOrder.productMeta,
     invoiceNumber: dbOrder.invoiceNumber,
     sourceEventCode: dbOrder.sourceEventCode,
-    registrationId: dbOrder.registrationId ? dbOrder.registrationId.toString() : null,
+    registrationId: dbOrder.registrationId ?? null,
     fieldValues: dbOrder.fieldValues,
     accessTokens: dbOrder.accessTokens,
     tshirtEligible: dbOrder.tshirtEligible,
     tshirtSize: dbOrder.tshirtSize,
     tshirtColor: dbOrder.tshirtColor,
-    userId: mappedUserId ?? dbOrder.userId,
-    eventId: mappedEventId ?? dbOrder.eventId,
+    userId: dbOrder.userId,
+    eventId: dbOrder.eventId,
     quantity: dbOrder.quantity,
     totalAmount: dbOrder.totalAmount,
     paymentStatus: dbOrder.paymentStatus,
@@ -166,27 +141,6 @@ function mapOrder(
   };
 }
 
-async function resolveUser(
-  tx: UserResolverClient,
-  userId: string
-): Promise<User | null> {
-  const isUuid = UUID_REGEX.test(userId);
-
-  return tx.user.findFirst({
-    where: isUuid ? { OR: [{ id: userId }, { convexId: userId }] } : { convexId: userId },
-  });
-}
-
-async function resolveEvent(
-  tx: EventResolverClient,
-  eventId: string
-): Promise<Event | null> {
-  const isUuid = UUID_REGEX.test(eventId);
-
-  return tx.event.findFirst({
-    where: isUuid ? { OR: [{ id: eventId }, { convexId: eventId }] } : { convexId: eventId },
-  });
-}
 
 export async function create(data: {
   orderId?: string;
@@ -197,7 +151,7 @@ export async function create(data: {
   productMeta?: string;
   invoiceNumber?: string;
   sourceEventCode?: number;
-  registrationId?: string;
+  registrationId?: number;
   fieldValues?: unknown;
   accessTokens?: string[];
   tshirtEligible?: boolean;
@@ -205,7 +159,7 @@ export async function create(data: {
   tshirtColor?: string;
 }): Promise<{ id: string; orderId: string; totalAmount: number }> {
   return prisma.$transaction(async (tx) => {
-    const event = await resolveEvent(tx, data.eventId);
+    const event = await tx.event.findUnique({ where: { id: data.eventId } });
     if (!event) {
       throw new Error("Event not found");
     }
@@ -216,7 +170,7 @@ export async function create(data: {
       throw new Error("Event is not active");
     }
 
-    const user = await resolveUser(tx, data.userId);
+    const user = await tx.user.findUnique({ where: { id: data.userId } });
     if (!user) {
       throw new Error("User not found");
     }
@@ -254,7 +208,7 @@ export async function create(data: {
         productMeta: data.productMeta,
         invoiceNumber: data.invoiceNumber,
         sourceEventCode: data.sourceEventCode,
-        registrationId: data.registrationId ? parseInt(data.registrationId, 10) : undefined,
+        registrationId: data.registrationId ?? undefined,
         fieldValues,
         accessTokens,
         tshirtEligible: data.tshirtEligible ?? false,
@@ -272,7 +226,7 @@ export async function create(data: {
     });
 
     return {
-      id: order.convexId ?? order.id,
+      id: order.id,
       orderId: order.orderId,
       totalAmount: order.totalAmount,
     };
@@ -299,7 +253,7 @@ export async function markAsPaid(orderId: string): Promise<string> {
       },
     });
 
-    return order.convexId ?? order.id;
+    return order.id;
   });
 }
 
@@ -322,11 +276,7 @@ export async function getByOrderId(
   const mappedEvent = order.event ? mapEvent(order.event) : null;
 
   return {
-    ...mapOrder(
-      order,
-      mappedUser ? mappedUser._id : undefined,
-      mappedEvent ? mappedEvent._id : undefined
-    ),
+    ...mapOrder(order),
     user: mappedUser,
     event: mappedEvent,
   };
@@ -358,12 +308,7 @@ function buildOrderWhereClause(filters: {
   }
 
   if (filters.eventId) {
-    const isUuid = UUID_REGEX.test(filters.eventId);
-    if (isUuid) {
-      where.event = { OR: [{ id: filters.eventId }, { convexId: filters.eventId }] };
-    } else {
-      where.event = { convexId: filters.eventId };
-    }
+    where.eventId = filters.eventId;
   }
 
   if (filters.mailed === "true") {
@@ -439,11 +384,7 @@ export async function listOrders(filters: {
       const mappedUser = order.user ? mapUser(order.user) : null;
       const mappedEvent = order.event ? mapEvent(order.event) : null;
       return {
-        ...mapOrder(
-          order,
-          mappedUser ? mappedUser._id : undefined,
-          mappedEvent ? mappedEvent._id : undefined
-        ),
+        ...mapOrder(order),
         user: mappedUser,
         event: mappedEvent,
       };
@@ -495,7 +436,7 @@ export async function updateOrder(orderId: string, data: any) {
   const mappedEvent = updated.event ? mapEvent(updated.event) : null;
 
   return {
-    ...mapOrder(updated, mappedUser ? mappedUser._id : undefined, mappedEvent ? mappedEvent._id : undefined),
+    ...mapOrder(updated),
     user: mappedUser,
     event: mappedEvent
   };

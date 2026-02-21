@@ -140,7 +140,7 @@ export default function GenerateTicketsPage() {
       }
 
       // Success
-      const selectedEvent = events.find((ev) => ev._id === eventId);
+      const selectedEvent = events.find((ev) => ev.id === eventId);
       setGeneratedTickets((prev) => [
         {
           orderId: payResult.orderId,
@@ -207,11 +207,11 @@ export default function GenerateTicketsPage() {
               <div className="flex flex-wrap gap-2">
                 {events.filter(ev => ev.isActive && ev.name !== "IGNORE_ME_ARCHIVED" && ev.name !== "Event Registration").map((ev) => (
                   <button
-                    key={ev._id}
+                    key={ev.id}
                     type="button"
-                    onClick={() => setEventId(ev._id)}
+                    onClick={() => setEventId(ev.id)}
                     className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                      eventId === ev._id
+                      eventId === ev.id
                         ? "bg-[#9AE600] text-black"
                         : "bg-[#1a1a1a] text-gray-400 hover:text-white border border-[#333] hover:border-[#9AE600]/40"
                     }`}

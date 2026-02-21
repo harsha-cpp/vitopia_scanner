@@ -382,7 +382,7 @@ export default function Home() {
       setStatus("scanning");
 
       try {
-        const result = await verifyTicket(qrCode, gateId, selectedEvent?._id || undefined);
+        const result = await verifyTicket(qrCode, gateId, selectedEvent?.id || undefined);
         setLastResult(result);
 
         const record: ScanRecord = {
@@ -423,7 +423,7 @@ export default function Home() {
         playSound("error");
       }
     },
-    [playSound, selectedEvent?._id]
+    [playSound, selectedEvent?.id]
   );
 
   useEffect(() => {
@@ -656,7 +656,7 @@ export default function Home() {
                       .map((event) => (
                         <button
                           type="button"
-                          key={event._id}
+                          key={event.id}
                           onClick={() => {
                             setSelectedEvent(event);
                             setDropdownOpen(false);

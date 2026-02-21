@@ -21,11 +21,11 @@ function parseProductMeta(rawMeta: string | null) {
 
   if (isPranav) {
     tokens.push('PRANAV');
-    displayNames.push('Pranav Sharma');
+    displayNames.push('Pranav Sharma Show');
   }
   if (isUday) {
     tokens.push('UDAYA');
-    displayNames.push('Sarat Raja Uday Boddeda');
+    displayNames.push('Sarat Raja Uday Boddeda Show');
   }
 
   // Parsing Days
@@ -106,21 +106,20 @@ export async function syncRegistrations() {
       throw new Error("API did not return an array. Check the response format or authentication.");
     }
 
-    // 3. Filter for NEW registrations only
-    const newRegistrations = allRegistrations.filter(
-      (reg: any) => reg.registration_id && true
+    const validRegistrations = allRegistrations.filter(
+      (reg: any) => !!reg.registration_id
     );
+    const newCount = validRegistrations.filter((reg: any) => !existingIds.has(Number(reg.registration_id))).length;
 
-    console.log(`[VTOPIA Sync] Fetched ${allRegistrations.length} total. Found ${newRegistrations.length} new records.`);
+    console.log(`[VTOPIA Sync] Fetched ${allRegistrations.length} total. ${validRegistrations.length} valid, ${newCount} new, ${validRegistrations.length - newCount} to re-sync.`);
 
-    // 4. Upsert the new registrations
-    if (newRegistrations.length > 0) {
-      console.log(`[VTOPIA Sync] Processing ${newRegistrations.length} new registrations...`);
+    if (validRegistrations.length > 0) {
+      console.log(`[VTOPIA Sync] Processing ${validRegistrations.length} registrations...`);
       
       let successCount = 0;
       let errorCount = 0;
 
-      for (const reg of newRegistrations) {
+      for (const reg of validRegistrations) {
         try {
           // Find Event by sourceEventCode (VTOPIA event_id)
           const eventIdFromApi = typeof reg.event_id === 'number' ? reg.event_id : parseInt(reg.event_id, 10);
@@ -188,7 +187,7 @@ export async function syncRegistrations() {
               accessTokens: parsedMeta.tokens
             },
             create: {
-              registrationId: parseInt(reg.registration_id, 10),
+              registrationId: Number(reg.registration_id),
               orderId: reg.order_id || `VTOPIA-${reg.registration_id}`,
               receiptId: reg.receipt_id,
               invoiceNumber: reg.invoice_number,

@@ -58,7 +58,7 @@ export default function AdminPage() {
       const data = await getEvents();
       setEvents(data);
       if (data.length > 0 && !selectedEvent) {
-        setSelectedEvent(data[0]._id);
+        setSelectedEvent(data[0].id);
       }
     } catch (error) {
       console.error("Failed to load events:", error);
@@ -176,10 +176,10 @@ export default function AdminPage() {
               <div className="space-y-2">
                 {events.map((event) => (
                   <button
-                    key={event._id}
-                    onClick={() => setSelectedEvent(event._id)}
+                    key={event.id}
+                    onClick={() => setSelectedEvent(event.id)}
                     className={`w-full text-left p-4 rounded-xl transition-colors ${
-                      selectedEvent === event._id
+                      selectedEvent === event.id
                         ? "bg-indigo-100 dark:bg-indigo-900/30 border-2 border-indigo-500"
                         : "bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-indigo-300"
                     }`}

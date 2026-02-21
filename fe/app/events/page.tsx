@@ -63,7 +63,7 @@ export default function EventsPage() {
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {events.map((event) => (
-              <EventCard key={event._id} event={event} />
+              <EventCard key={event.id} event={event} />
             ))}
           </div>
         )}
@@ -116,7 +116,7 @@ function EventCard({ event }: { event: Event }) {
             ${(event.price / 100).toFixed(2)}
           </span>
           <Link
-            href={`/events/${event._id}`}
+            href={`/events/${event.id}`}
             className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center gap-2"
           >
             <Ticket className="w-4 h-4" />

@@ -4,10 +4,7 @@ import type { PrismaClient, Event, EventCategory } from "../../generated/prisma/
 const prisma = basePrisma as unknown as PrismaClient;
 
 export interface MappedEvent {
-  _id: string;
-  _creationTime: number;
   id: string;
-  convexId: string | null;
   name: string;
   description: string;
   date: number;
@@ -23,10 +20,7 @@ export interface MappedEvent {
 
 function mapEvent(dbEvent: Event): MappedEvent {
   return {
-    _id: dbEvent.convexId ?? dbEvent.id,
-    _creationTime: Number(dbEvent.createdAt),
     id: dbEvent.id,
-    convexId: dbEvent.convexId,
     name: dbEvent.name,
     description: dbEvent.description,
     date: Number(dbEvent.date),
@@ -50,12 +44,8 @@ export async function listActive(): Promise<MappedEvent[]> {
 }
 
 export async function getById(eventId: string): Promise<MappedEvent | null> {
-  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(eventId);
-  
-  const event = await prisma.event.findFirst({
-    where: isUuid
-      ? { OR: [{ id: eventId }, { convexId: eventId }] }
-      : { convexId: eventId },
+  const event = await prisma.event.findUnique({
+    where: { id: eventId },
   });
 
   return event ? mapEvent(event) : null;
@@ -90,7 +80,7 @@ export async function create(data: {
     },
   });
 
-  return event.convexId ?? event.id;
+  return event.id;
 }
 
 export async function update(
@@ -108,12 +98,8 @@ export async function update(
     scanOrder?: number;
   }
 ): Promise<string> {
-  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(eventId);
-  
-  const event = await prisma.event.findFirst({
-    where: isUuid
-      ? { OR: [{ id: eventId }, { convexId: eventId }] }
-      : { convexId: eventId },
+  const event = await prisma.event.findUnique({
+    where: { id: eventId },
   });
 
   if (!event) throw new Error("Event not found");
@@ -128,7 +114,7 @@ export async function update(
     data: dataToUpdate,
   });
 
-  return event.convexId ?? event.id;
+  return event.id;
 }
 
 export async function getStats(eventId: string) {
