@@ -26,6 +26,9 @@ export interface TicketEmailData {
   orderId: string;
   eventName: string;
   quantity: number;
+  date: string;
+  venue: string;
+  email: string;
 }
 
 export function buildEmailHtml(data: TicketEmailData): string {
@@ -37,87 +40,134 @@ export function buildEmailHtml(data: TicketEmailData): string {
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
 </head>
-<body style="margin:0;padding:0;background-color:#0a0a0a;font-family:'Inter',sans-serif;color:#ffffff;-webkit-font-smoothing:antialiased;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#0a0a0a;padding:60px 20px;">
+<body style="margin:0;padding:0;background-color:#050505;font-family:'Inter',sans-serif;color:#ffffff;-webkit-font-smoothing:antialiased;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#050505;padding:40px 20px;">
     <tr>
       <td align="center">
         <!-- Main Card -->
-        <table width="600" cellpadding="0" cellspacing="0" style="background-color:#141414;border:1px solid #2a2a2a;border-radius:24px;overflow:hidden;box-shadow:0 24px 48px rgba(0,0,0,0.5);">
+        <table width="600" cellpadding="0" cellspacing="0" style="background-color:#111111;border:1px solid #222222;border-radius:28px;overflow:hidden;box-shadow:0 30px 60px rgba(0,0,0,0.8);">
           
-          <!-- Header Area -->
+          <!-- Branding Header -->
           <tr>
-            <td style="padding:48px 40px;text-align:center;border-bottom:1px solid #2a2a2a;background:linear-gradient(180deg, #1f1f1f 0%, #141414 100%);">
-              <div style="font-size:12px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#9AE600;margin-bottom:24px;">VIT-AP University Presents</div>
-              <img src="cid:logo" alt="VITopia '26" style="width:180px;height:auto;display:block;margin:0 auto;" />
+            <td style="padding:48px 40px 32px;text-align:center;background:linear-gradient(180deg, #181818 0%, #111111 100%);">
+              <div style="font-size:11px;font-weight:800;letter-spacing:4px;text-transform:uppercase;color:#9AE600;margin-bottom:20px;opacity:0.9;">VIT-AP University Presents</div>
+              <img src="cid:logo" alt="VITopia '26" style="width:170px;height:auto;display:block;margin:0 auto;" />
             </td>
           </tr>
 
-          <!-- Content Area -->
+          <!-- Hero Section -->
           <tr>
-            <td style="padding:40px;">
-              <p style="margin:0 0 8px;font-size:20px;font-weight:600;color:#ffffff;">
-                Hi ${data.name},
-              </p>
-              <p style="margin:0 0 32px;font-size:16px;line-height:1.6;color:#a0a0a0;">
-                You're officially on the list. We've attached your QR code below—this is your exclusive pass to the event. Keep it safe and have it ready at the gate.
-              </p>
-              
-              <!-- Details Box -->
-              <table cellpadding="0" cellspacing="0" style="background-color:#0a0a0a;border:1px solid #2a2a2a;border-radius:16px;width:100%;margin-bottom:32px;">
+            <td style="padding:0 40px 40px;">
+              <div style="text-align:center;padding:32px;background:rgba(154,230,0,0.03);border:1px dashed rgba(154,230,0,0.2);border-radius:24px;">
+                <h2 style="margin:0 0 8px;font-size:24px;font-weight:700;color:#ffffff;">Registration Confirmed</h2>
+                <p style="margin:0;font-size:15px;color:#a0a0a0;line-height:1.5;">Hi ${data.name}, you're all set! Below is your official pass to the event. Please present this at the entry gate.</p>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Ticket Information -->
+          <tr>
+            <td style="padding:0 40px 40px;">
+              <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#0a0a0a;border:1px solid #222222;border-radius:20px;overflow:hidden;">
+                <!-- Event Details Header -->
                 <tr>
-                  <td style="padding:24px;border-bottom:1px solid #1f1f1f;">
-                    <div style="margin-bottom:20px;">
-                      <span style="display:block;color:#666666;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:6px;">Event Access</span>
-                      <span style="display:block;color:#ffffff;font-size:18px;font-weight:600;">${data.eventName}</span>
-                    </div>
-                    <div style="display:inline-block;margin-right:48px;">
-                      <span style="display:block;color:#666666;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:6px;">Quantity</span>
-                      <span style="display:block;color:#ffffff;font-size:16px;font-weight:500;">${data.quantity} Pass${data.quantity > 1 ? 'es' : ''}</span>
-                    </div>
-                    <div style="display:inline-block;">
-                      <span style="display:block;color:#666666;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:6px;">Order Ref</span>
-                      <span style="display:block;color:#9AE600;font-family:'Courier New',monospace;font-size:14px;font-weight:600;">${data.orderId}</span>
-                    </div>
+                  <td style="padding:28px 28px 20px;border-bottom:1px solid #1a1a1a;">
+                    <span style="display:block;color:#666666;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px;">Accessing Event</span>
+                    <h3 style="margin:0;font-size:20px;font-weight:700;color:#ffffff;letter-spacing:-0.5px;">${data.eventName}</h3>
                   </td>
                 </tr>
+                
+                <!-- Meta Grid -->
                 <tr>
-                  <td style="padding:24px;text-align:center;background-color:#ffffff;border-bottom-left-radius:16px;border-bottom-right-radius:16px;">
-                    <!-- CID inline image -->
-                    <img src="cid:qrcode" alt="Your Ticket QR Code" style="width:200px;height:200px;display:block;margin:0 auto;" />
-                    <p style="margin:16px 0 0;font-size:13px;font-weight:500;color:#666666;">Scan at the entry gate</p>
+                  <td style="padding:24px 28px;">
+                    <table width="100%" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td width="55%" style="padding-bottom:24px;">
+                          <span style="display:block;color:#666666;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Date & Time</span>
+                          <span style="display:block;color:#ffffff;font-size:14px;font-weight:500;">${data.date}</span>
+                        </td>
+                        <td width="45%" style="padding-bottom:24px;">
+                          <span style="display:block;color:#666666;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Venue</span>
+                          <span style="display:block;color:#ffffff;font-size:14px;font-weight:500;">${data.venue}</span>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="padding-bottom:8px;">
+                          <span style="display:block;color:#666666;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Attendee</span>
+                          <span style="display:block;color:#ffffff;font-size:14px;font-weight:500;">${data.name}</span>
+                          <span style="display:block;color:#666666;font-size:12px;">${data.email}</span>
+                        </td>
+                        <td style="padding-bottom:8px;">
+                          <span style="display:block;color:#666666;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Tickets</span>
+                          <span style="display:block;color:#ffffff;font-size:15px;font-weight:600;">${data.quantity} Entry Pass${data.quantity > 1 ? 'es' : ''}</span>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+
+                <!-- QR Section -->
+                <tr>
+                  <td style="padding:32px;background-color:#ffffff;text-align:center;">
+                    <img src="cid:qrcode" alt="QR Code" style="width:220px;height:220px;display:block;margin:0 auto;" />
+                    <div style="margin-top:20px;padding-top:20px;border-top:1px solid #f0f0f0;">
+                      <span style="display:block;color:#999999;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:2px;margin-bottom:4px;">Order Reference</span>
+                      <span style="display:block;color:#000000;font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;">${data.orderId.toUpperCase()}</span>
+                    </div>
                   </td>
                 </tr>
               </table>
+            </td>
+          </tr>
 
-              <div style="background-color:rgba(255,255,255,0.03);border-radius:12px;padding:20px;">
-                <h3 style="margin:0 0 12px;font-size:14px;font-weight:600;color:#ffffff;">Need to know</h3>
-                <ul style="margin:0;padding-left:20px;color:#a0a0a0;font-size:14px;line-height:1.6;">
-                  <li style="margin-bottom:8px;">Have your brightness up when scanning.</li>
-                  <li style="margin-bottom:8px;">Valid ID required at entry.</li>
-                  <li>Please arrive early to avoid the rush.</li>
-                </ul>
-              </div>
+          <!-- Security & Rules -->
+          <tr>
+            <td style="padding:0 40px 48px;">
+              <h4 style="margin:0 0 16px;font-size:14px;font-weight:700;color:#9AE600;text-transform:uppercase;letter-spacing:1px;">Security & Guidelines</h4>
+              <table width="100%" cellpadding="0" cellspacing="0" style="color:#888888;font-size:13px;line-height:1.6;">
+                <tr>
+                  <td style="padding-bottom:12px;vertical-align:top;width:20px;color:#ff4444;">•</td>
+                  <td style="padding-bottom:12px;"><strong style="color:#ff4444;">DO NOT SHARE:</strong> Strictly do not share this QR code. If found duplicated, both the original and shared holder will be denied entry.</td>
+                </tr>
+                <tr>
+                  <td style="padding-bottom:12px;vertical-align:top;width:20px;">•</td>
+                  <td style="padding-bottom:12px;"><strong>Valid ID Required:</strong> University ID or Govt ID is mandatory at entry along with this ticket.</td>
+                </tr>
+                <tr>
+                  <td style="padding-bottom:12px;vertical-align:top;width:20px;">•</td>
+                  <td style="padding-bottom:12px;"><strong>Strict Access:</strong> One pass per entry. Management reserves the right to frisk attendees for security.</td>
+                </tr>
+                <tr>
+                  <td style="padding-bottom:12px;vertical-align:top;width:20px;">•</td>
+                  <td style="padding-bottom:12px;"><strong>No Re-entry:</strong> Once you exit the venue perimeter, re-entry is not permitted.</td>
+                </tr>
+                <tr>
+                  <td style="padding-bottom:12px;vertical-align:top;width:20px;">•</td>
+                  <td style="padding-bottom:12px;"><strong>Prohibited items:</strong> Alcohol, tobacco, illegal substances, dangerous objects, or external food/drinks.</td>
+                </tr>
+                <tr>
+                  <td style="vertical-align:top;width:20px;">•</td>
+                  <td><strong>Arrival:</strong> Please arrive at least 30 minutes before the event starts to avoid the rush.</td>
+                </tr>
+              </table>
             </td>
           </tr>
           
-          <!-- Footer -->
+          <!-- Footer Branding -->
           <tr>
-            <td style="padding:32px 40px;text-align:center;border-top:1px solid #2a2a2a;background-color:#0a0a0a;">
-              <p style="margin:0;font-size:14px;font-weight:500;color:#666666;">
-                VIT-AP University Campus<br />
-                <span style="color:#444444;">Amaravati, Andhra Pradesh</span>
+            <td style="padding:40px;text-align:center;border-top:1px solid #1a1a1a;background-color:#0a0a0a;">
+              <p style="margin:0;font-size:13px;color:#555555;">
+                VIT-AP University · Amaravati, Andhra Pradesh · 522237<br />
+                Questions? Visit <a href="https://vitopia.vitap.ac.in" style="color:#9AE600;text-decoration:none;">vitopia.vitap.ac.in</a>
               </p>
-              <div style="margin-top:24px;padding-top:24px;border-top:1px solid #1f1f1f;">
-                <a href="https://vitopia.vitap.ac.in" style="color:#9AE600;text-decoration:none;font-size:13px;font-weight:600;letter-spacing:0.5px;">vitopia.vitap.ac.in</a>
-              </div>
             </td>
           </tr>
         </table>
         
-        <p style="margin:32px 0 0;font-size:12px;color:#444444;text-align:center;">
-          This is an automated message. Please do not reply.
+        <p style="margin:32px 0 0;font-size:11px;color:#333333;text-align:center;letter-spacing:0.5px;">
+          THIS IS AN AUTOMATED MESSAGE. PLEASE DO NOT REPLY TO THIS EMAIL.
         </p>
       </td>
     </tr>
@@ -141,29 +191,40 @@ export async function sendTicketEmail(orderId: string, emailOverride?: string) {
     throw new Error(`Order not found: ${orderId}`);
   }
 
-  const recipientEmail = emailOverride || order.user?.email;
+  const recipientEmail = emailOverride || order.user?.email || "";
   if (!recipientEmail) {
     throw new Error(`No recipient email for order: ${orderId}`);
   }
 
+  // Format the date nicely
+  const eventDate = order.event?.date ? new Date(Number(order.event.date)) : new Date();
+  const formattedDate = eventDate.toLocaleDateString("en-IN", {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true
+  });
+
   const qrToken = generateQRCode({ orderId: order.orderId });
   const qrBuffer = await generateStyledQRImage(qrToken);
 
-  // Load logo and convert to WebP
+  // Load logo
   const logoPath = path.join(__dirname, "../assets/vitopia.png");
   let logoBuffer: Buffer | null = null;
   try {
-    const rawLogo = fs.readFileSync(logoPath);
-    logoBuffer = await sharp(rawLogo).webp({ lossless: true }).toBuffer();
+    logoBuffer = fs.readFileSync(logoPath);
   } catch (e) {
-    console.warn("Could not read/convert vitopia.png logo for email", e);
+    console.warn("Could not read vitopia.png logo for email", e);
   }
 
   const attachments: any[] = [
     {
-      filename: "ticket.webp",
+      filename: "ticket.png",
       content: qrBuffer,
-      contentType: "image/webp",
+      contentType: "image/png",
       contentId: "qrcode",
       contentDisposition: "inline",
     },
@@ -171,9 +232,9 @@ export async function sendTicketEmail(orderId: string, emailOverride?: string) {
 
   if (logoBuffer) {
     attachments.push({
-      filename: "logo.webp",
+      filename: "logo.png",
       content: logoBuffer,
-      contentType: "image/webp",
+      contentType: "image/png",
       contentId: "logo",
       contentDisposition: "inline",
     });
@@ -188,6 +249,9 @@ export async function sendTicketEmail(orderId: string, emailOverride?: string) {
       orderId: order.orderId,
       eventName: order.event?.name || "Event",
       quantity: order.quantity,
+      date: formattedDate,
+      venue: order.event?.venue || "VIT-AP Campus",
+      email: recipientEmail,
     }),
     attachments,
   });

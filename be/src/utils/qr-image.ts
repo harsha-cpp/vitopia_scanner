@@ -134,17 +134,17 @@ export async function generateStyledQRImage(qrToken: string): Promise<Buffer> {
     `</svg>`,
   ].join("\n");
 
-  // ── Render SVG → WebP, composite logo on top ──
-  const baseWebp = await sharp(Buffer.from(svg)).webp({ quality: 90 }).toBuffer();
+  // ── Render SVG → PNG, composite logo on top ──
+  const basePng = await sharp(Buffer.from(svg)).png().toBuffer();
 
-  return sharp(baseWebp)
+  return sharp(basePng)
     .composite([{ input: logoPng, left: bx, top: by, blend: "over" }])
-    .webp({ quality: 90 })
+    .png()
     .toBuffer();
 }
 
-/** Returns a base64 data URL of the styled QR WebP (for email attachments). */
+/** Returns a base64 data URL of the styled QR PNG (for email attachments). */
 export async function generateStyledQRDataUrl(qrToken: string): Promise<string> {
   const buf = await generateStyledQRImage(qrToken);
-  return `data:image/webp;base64,${buf.toString("base64")}`;
+  return `data:image/png;base64,${buf.toString("base64")}`;
 }
