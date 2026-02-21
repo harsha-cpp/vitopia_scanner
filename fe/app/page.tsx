@@ -144,7 +144,7 @@ export default function Home() {
   const [scanning, setScanning] = useState(false);
   const [status, setStatus] = useState<ScanStatus>("idle");
   const [lastResult, setLastResult] = useState<ScanResult | null>(null);
-  const gateId = "gate-1";
+  const [gateId, setGateId] = useState("gate-1");
   const [gateSecret, setGateSecret] = useState("");
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [events, setEvents] = useState<Event[]>([]);
@@ -193,6 +193,7 @@ export default function Home() {
     if (!token) {
       router.push("/login");
     } else {
+      setGateId(token.toUpperCase());
       if (secret) setGateSecret(secret);
       setHasAccess(true);
     }
@@ -337,7 +338,7 @@ export default function Home() {
         stopHistoryCamera(false);
       }
     },
-    [stopHistoryCamera, gateSecret]
+    [stopHistoryCamera, gateId, gateSecret]
   );
 
   const openHistoryModal = useCallback(() => {
@@ -447,7 +448,7 @@ export default function Home() {
         playSound("error");
       }
     },
-    [playSound, selectedEvent?.id, gateSecret]
+    [playSound, selectedEvent?.id, gateId, gateSecret]
   );
 
   useEffect(() => {

@@ -11,6 +11,20 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 let _resend: Resend | null = null;
+let _cachedLogoBuffer: Buffer | null = null;
+let _logoLoadAttempted = false;
+
+function getLogoBuffer(): Buffer | null {
+  if (_logoLoadAttempted) return _cachedLogoBuffer;
+  _logoLoadAttempted = true;
+  const logoPath = path.join(__dirname, "../assets/vitopia.png");
+  try {
+    _cachedLogoBuffer = fs.readFileSync(logoPath);
+  } catch (e) {
+    console.warn("Could not read vitopia.png logo for email", e);
+  }
+  return _cachedLogoBuffer;
+}
 
 export function getResend(): Resend {
   if (!_resend) {
@@ -41,38 +55,55 @@ export function buildEmailHtml(data: TicketEmailData): string {
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+  <style>
+    .container { width: 100%; max-width: 600px; margin: 0 auto; }
+    .hero-text { font-size: 28px; }
+    .hero-sub { max-width: 320px; font-size: 15px; }
+    .meta-grid { width: 100%; }
+    .meta-grid td { display: table-cell; }
+    @media only screen and (max-width: 600px) {
+      .container { width: 100% !important; border-radius: 16px !important; }
+      .padded { padding: 20px 20px 24px !important; }
+      .padded-sm { padding: 16px !important; }
+      .meta-grid { display: block; width: 100%; }
+      .meta-grid tr { display: block; }
+      .meta-grid td { display: block; width: 100% !important; padding-bottom: 16px !important; }
+      .hero-text { font-size: 24px !important; }
+      .qr-img { width: 180px !important; height: 180px !important; }
+    }
+  </style>
 </head>
 <body style="margin:0;padding:0;background-color:#050505;font-family:'Inter',sans-serif;color:#ffffff;-webkit-font-smoothing:antialiased;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#050505;padding:40px 20px;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#050505;padding:20px 10px;">
     <tr>
       <td align="center">
         <!-- Main Card — frosted glass -->
-        <table width="600" cellpadding="0" cellspacing="0" style="background:linear-gradient(165deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%);border:1px solid rgba(255,255,255,0.08);border-radius:28px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.05);">
+        <table class="container" cellpadding="0" cellspacing="0" style="background:linear-gradient(165deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%);border:1px solid rgba(255,255,255,0.08);border-radius:28px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.05);">
           
           <!-- Branding Header -->
           <tr>
-            <td style="padding:48px 40px 32px;text-align:center;background:linear-gradient(180deg, rgba(255,255,255,0.04) 0%, transparent 100%);">
-              <img src="cid:logo" alt="VITopia '26" style="width:170px;height:auto;display:block;margin:0 auto;" />
+            <td class="padded" style="padding:40px 30px 24px;text-align:center;background:linear-gradient(180deg, rgba(255,255,255,0.04) 0%, transparent 100%);">
+              <img src="cid:logo" alt="VITopia '26" style="width:150px;max-width:100%;height:auto;display:block;margin:0 auto;" />
             </td>
           </tr>
 
           <!-- Hero Section — glass panel -->
           <tr>
-            <td style="padding:0 40px 32px;">
-              <div style="text-align:center;padding:44px 32px;background:linear-gradient(145deg, rgba(154,230,0,0.08) 0%, rgba(154,230,0,0.02) 50%, rgba(255,255,255,0.03) 100%);border:1px solid rgba(154,230,0,0.2);border-radius:24px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.06), 0 8px 32px rgba(0,0,0,0.3);">
-                <h2 style="margin:0 0 12px;font-size:28px;font-weight:800;color:#ffffff;letter-spacing:-0.02em;text-transform:uppercase;">Confirmed, ${data.name.split(' ')[0]}.</h2>
-                <p style="margin:0;font-size:15px;color:rgba(255,255,255,0.5);line-height:1.6;max-width:320px;margin-left:auto;margin-right:auto;">Your access is secured. Show this QR at entry.</p>
+            <td class="padded" style="padding:0 30px 24px;">
+              <div class="padded-sm" style="text-align:center;padding:32px 24px;background:linear-gradient(145deg, rgba(154,230,0,0.08) 0%, rgba(154,230,0,0.02) 50%, rgba(255,255,255,0.03) 100%);border:1px solid rgba(154,230,0,0.2);border-radius:24px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.06), 0 8px 32px rgba(0,0,0,0.3);">
+                <h2 class="hero-text" style="margin:0 0 12px;font-weight:800;color:#ffffff;letter-spacing:-0.02em;text-transform:uppercase;">Confirmed, ${data.name.split(' ')[0]}.</h2>
+                <p class="hero-sub" style="margin:0;color:rgba(255,255,255,0.5);line-height:1.6;margin-left:auto;margin-right:auto;">Your access is secured. Show this QR at entry.</p>
               </div>
             </td>
           </tr>
 
           <!-- Ticket Information — glass card -->
           <tr>
-            <td style="padding:0 40px 40px;">
+            <td class="padded" style="padding:0 30px 32px;">
               <table width="100%" cellpadding="0" cellspacing="0" style="background:linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.01) 100%);border:1px solid rgba(255,255,255,0.07);border-radius:20px;overflow:hidden;box-shadow:inset 0 1px 0 rgba(255,255,255,0.05);">
                 <!-- Event Details Header -->
                 <tr>
-                  <td style="padding:28px 28px 20px;border-bottom:1px solid rgba(255,255,255,0.06);">
+                  <td class="padded-sm" style="padding:24px 24px 16px;border-bottom:1px solid rgba(255,255,255,0.06);">
                     <span style="display:block;color:rgba(255,255,255,0.35);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px;">Accessing Event</span>
                     <h3 style="margin:0;font-size:20px;font-weight:700;color:#ffffff;letter-spacing:-0.5px;">${data.eventName}</h3>
                   </td>
@@ -80,25 +111,25 @@ export function buildEmailHtml(data: TicketEmailData): string {
                 
                 <!-- Meta Grid -->
                 <tr>
-                  <td style="padding:24px 28px;">
-                    <table width="100%" cellpadding="0" cellspacing="0">
+                  <td class="padded-sm" style="padding:20px 24px;">
+                    <table class="meta-grid" cellpadding="0" cellspacing="0">
                       <tr>
-                        <td width="55%" style="padding-bottom:24px;">
+                        <td width="55%" style="padding-bottom:20px;box-sizing:border-box;">
                           <span style="display:block;color:rgba(255,255,255,0.35);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Date &amp; Time</span>
                           <span style="display:block;color:rgba(255,255,255,0.85);font-size:14px;font-weight:500;">${data.date}</span>
                         </td>
-                        <td width="45%" style="padding-bottom:24px;">
+                        <td width="45%" style="padding-bottom:20px;box-sizing:border-box;">
                           <span style="display:block;color:rgba(255,255,255,0.35);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Venue</span>
                           <span style="display:block;color:rgba(255,255,255,0.85);font-size:14px;font-weight:500;">${data.venue}</span>
                         </td>
                       </tr>
                       <tr>
-                        <td style="padding-bottom:8px;">
+                        <td style="padding-bottom:8px;box-sizing:border-box;">
                           <span style="display:block;color:rgba(255,255,255,0.35);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Attendee</span>
                           <span style="display:block;color:rgba(255,255,255,0.85);font-size:14px;font-weight:500;">${data.name}</span>
-                          <span style="display:block;color:rgba(255,255,255,0.4);font-size:12px;">${data.email}</span>
+                          <span style="display:block;color:rgba(255,255,255,0.4);font-size:12px;word-break:break-all;">${data.email}</span>
                         </td>
-                        <td style="padding-bottom:8px;">
+                        <td style="padding-bottom:8px;box-sizing:border-box;">
                           <span style="display:block;color:rgba(255,255,255,0.35);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Tickets</span>
                           <span style="display:block;color:rgba(255,255,255,0.9);font-size:15px;font-weight:600;">${data.quantity} Entry Pass${data.quantity > 1 ? 'es' : ''}</span>
                         </td>
@@ -109,11 +140,11 @@ export function buildEmailHtml(data: TicketEmailData): string {
 
                 <!-- QR Section — clean white -->
                 <tr>
-                  <td style="padding:32px;background-color:#ffffff;text-align:center;border-radius:0 0 19px 19px;">
-                    <img src="cid:qrcode" alt="QR Code" style="width:220px;height:220px;display:block;margin:0 auto;" />
+                  <td class="padded-sm" style="padding:28px;background-color:#ffffff;text-align:center;border-radius:0 0 19px 19px;">
+                    <img class="qr-img" src="cid:qrcode" alt="QR Code" style="width:220px;height:220px;display:block;margin:0 auto;" />
                     <div style="margin-top:20px;padding-top:20px;border-top:1px solid #eeeeee;">
                       <span style="display:block;color:#999999;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:2px;margin-bottom:4px;">Order Reference</span>
-                      <span style="display:block;color:#111111;font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;">${data.orderId.toUpperCase()}</span>
+                      <span style="display:block;color:#111111;font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;word-break:break-all;">${data.orderId.toUpperCase()}</span>
                     </div>
                   </td>
                 </tr>
@@ -123,8 +154,8 @@ export function buildEmailHtml(data: TicketEmailData): string {
 
           <!-- Security & Rules — glass panel -->
           <tr>
-            <td style="padding:0 40px 48px;">
-              <div style="padding:28px;background:linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%);border:1px solid rgba(255,255,255,0.06);border-radius:16px;">
+            <td class="padded" style="padding:0 30px 40px;">
+              <div class="padded-sm" style="padding:24px;background:linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%);border:1px solid rgba(255,255,255,0.06);border-radius:16px;">
                 <h4 style="margin:0 0 16px;font-size:13px;font-weight:700;color:#9AE600;text-transform:uppercase;letter-spacing:1.5px;">Security &amp; Guidelines</h4>
                 <table width="100%" cellpadding="0" cellspacing="0" style="color:rgba(255,255,255,0.45);font-size:13px;line-height:1.6;">
                   <tr>
@@ -154,23 +185,16 @@ export function buildEmailHtml(data: TicketEmailData): string {
           
           <!-- Footer — subtle glass -->
           <tr>
-            <td style="padding:36px 40px;text-align:center;border-top:1px solid rgba(255,255,255,0.05);background:linear-gradient(180deg, rgba(255,255,255,0.02) 0%, transparent 100%);">
+            <td class="padded" style="padding:32px 30px;text-align:center;border-top:1px solid rgba(255,255,255,0.05);background:linear-gradient(180deg, rgba(255,255,255,0.02) 0%, transparent 100%);">
               <p style="margin:0;font-size:13px;color:rgba(255,255,255,0.3);">
                 VIT-AP University · Amaravati, Andhra Pradesh · 522237<br />
-                Questions? Contact <a href="mailto:rishi.23bce8982@vitapstudent.ac.in" style="color:#9AE600;text-decoration:none;">rishi.23bce8982@vitapstudent.ac.in</a>
+                Questions? Contact <a href="mailto:rishi.23bce8982@vitapstudent.ac.in" style="color:#9AE600;text-decoration:none;word-break:break-all;">rishi.23bce8982@vitapstudent.ac.in</a>
               </p>
             </td>
           </tr>
         </table>
         
-        <p style="margin:32px 0 0;font-size:11px;color:rgba(255,255,255,0.2);text-align:center;letter-spacing:0.5px;">
-          THIS IS AN AUTOMATED MESSAGE. PLEASE DO NOT REPLY TO THIS EMAIL.
-        </p>
-            </td>
-          </tr>
-        </table>
-        
-        <p style="margin:32px 0 0;font-size:11px;color:#333333;text-align:center;letter-spacing:0.5px;">
+        <p style="margin:24px 0 0;font-size:11px;color:rgba(255,255,255,0.2);text-align:center;letter-spacing:0.5px;">
           THIS IS AN AUTOMATED MESSAGE. PLEASE DO NOT REPLY TO THIS EMAIL.
         </p>
       </td>
@@ -212,14 +236,7 @@ export async function sendTicketEmail(orderId: string, emailOverride?: string) {
   const qrToken = generateQRCode({ orderId: order.orderId });
   const qrBuffer = await generateStyledQRImage(qrToken);
 
-  // Load logo
-  const logoPath = path.join(__dirname, "../assets/vitopia.png");
-  let logoBuffer: Buffer | null = null;
-  try {
-    logoBuffer = fs.readFileSync(logoPath);
-  } catch (e) {
-    console.warn("Could not read vitopia.png logo for email", e);
-  }
+  const logoBuffer = getLogoBuffer();
 
   const attachments: any[] = [
     {

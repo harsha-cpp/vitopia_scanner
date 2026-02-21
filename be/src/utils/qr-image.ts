@@ -64,6 +64,9 @@ async function getModuleMatrix(token: string): Promise<boolean[][]> {
   return modules;
 }
 
+let cachedLogoMeta: { logoW: number; logoH: number; imgPx: number } | null = null;
+let cachedLogoPng: Buffer | null = null;
+
 /**
  * Generates a styled VITopia QR code PNG buffer.
  *
@@ -75,29 +78,33 @@ export async function generateStyledQRImage(qrToken: string): Promise<Buffer> {
   const size = modules.length;
   const imgPx = size * MODULE_PX;
 
-  // ── Logo: resize preserving aspect ratio, strip near-black background ──
-  const logoRaw = readFileSync(LOGO_PATH);
-  const logoMeta = await sharp(logoRaw).metadata();
-  const origW = logoMeta.width ?? 400;
-  const origH = logoMeta.height ?? 300;
-  const maxLogoW = Math.floor(imgPx * LOGO_RATIO);
-  const scale = maxLogoW / origW;
-  const logoW = Math.floor(origW * scale);
-  const logoH = Math.floor(origH * scale);
+  // ── Cache Logo rendering ──
+  if (!cachedLogoPng || cachedLogoMeta?.imgPx !== imgPx) {
+    const logoRaw = readFileSync(LOGO_PATH);
+    const logoMeta = await sharp(logoRaw).metadata();
+    const origW = logoMeta.width ?? 400;
+    const origH = logoMeta.height ?? 300;
+    const maxLogoW = Math.floor(imgPx * LOGO_RATIO);
+    const scale = maxLogoW / origW;
+    const logoW = Math.floor(origW * scale);
+    const logoH = Math.floor(origH * scale);
 
-  const { data: logoPixels } = await sharp(logoRaw)
-    .resize(logoW, logoH, { fit: "fill" })
-    .ensureAlpha()
-    .raw()
-    .toBuffer({ resolveWithObject: true });
+    const { data: logoPixels } = await sharp(logoRaw)
+      .resize(logoW, logoH, { fit: "fill" })
+      .ensureAlpha()
+      .raw()
+      .toBuffer({ resolveWithObject: true });
 
-  // Disabled transparency mod for white background
+    cachedLogoPng = await sharp(logoPixels, {
+      raw: { width: logoW, height: logoH, channels: 4 },
+    })
+      .png()
+      .toBuffer();
 
-  const logoPng = await sharp(logoPixels, {
-    raw: { width: logoW, height: logoH, channels: 4 },
-  })
-    .png()
-    .toBuffer();
+    cachedLogoMeta = { logoW, logoH, imgPx };
+  }
+
+  const { logoW, logoH } = cachedLogoMeta;
 
   // Logo center position in pixels
   const bx = Math.floor((imgPx - logoW) / 2);
@@ -138,7 +145,7 @@ export async function generateStyledQRImage(qrToken: string): Promise<Buffer> {
   const basePng = await sharp(Buffer.from(svg)).png().toBuffer();
 
   return sharp(basePng)
-    .composite([{ input: logoPng, left: bx, top: by, blend: "over" }])
+    .composite([{ input: cachedLogoPng!, left: bx, top: by, blend: "over" }])
     .png()
     .toBuffer();
 }
