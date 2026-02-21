@@ -50,7 +50,7 @@ export function buildEmailHtml(data: TicketEmailData): string {
           <tr>
             <td style="padding:48px 40px;text-align:center;border-bottom:1px solid #2a2a2a;background:linear-gradient(180deg, #1f1f1f 0%, #141414 100%);">
               <div style="font-size:12px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#9AE600;margin-bottom:24px;">VIT-AP University Presents</div>
-              <img src="cid:logo" alt="VITopia '26" style="width:240px;height:auto;display:block;margin:0 auto;" />
+              <img src="cid:logo" alt="VITopia '26" style="width:180px;height:auto;display:block;margin:0 auto;" />
             </td>
           </tr>
 
@@ -154,7 +154,7 @@ export async function sendTicketEmail(orderId: string, emailOverride?: string) {
   let logoBuffer: Buffer | null = null;
   try {
     const rawLogo = fs.readFileSync(logoPath);
-    logoBuffer = await sharp(rawLogo).webp({ quality: 90 }).toBuffer();
+    logoBuffer = await sharp(rawLogo).webp({ lossless: true }).toBuffer();
   } catch (e) {
     console.warn("Could not read/convert vitopia.png logo for email", e);
   }

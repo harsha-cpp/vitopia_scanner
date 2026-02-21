@@ -15,8 +15,8 @@ const DOT_RADIUS = 4;    // rounded corner radius
 const GRAD_START = { r: 180, g: 10, b: 0 };
 const GRAD_END = { r: 200, g: 100, b: 0 };
 
-// Logo occupies 28% of QR width — safe with ERROR_CORRECT_H (30% damage tolerance)
-const LOGO_RATIO = 0.18;
+// Logo occupies 16% of QR width — safe with ERROR_CORRECT_H (30% damage tolerance)
+const LOGO_RATIO = 0.16;
 
 function toHex(n: number): string {
   return n.toString(16).padStart(2, "0");
