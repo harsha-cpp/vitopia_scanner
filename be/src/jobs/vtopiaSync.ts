@@ -24,7 +24,7 @@ function parseProductMeta(rawMeta: string | null) {
     displayNames.push('Pranav Sharma Show');
   }
   if (isUday) {
-    tokens.push('UDAY');
+    tokens.push('UDAYA');
     displayNames.push('Sarat Raja Uday Boddeda Show');
   }
 
@@ -42,6 +42,11 @@ function parseProductMeta(rawMeta: string | null) {
   if (metaLower.includes('day-3') || metaLower.includes('day 3') || metaLower.includes('day3') || metaLower.includes('valedictory')) {
     tokens.push('DAY_3');
     displayNames.push('Day 3');
+  }
+
+  if (metaLower.includes('t-shirt') || metaLower.includes('tshirt')) {
+    tokens.push('TSHIRT');
+    displayNames.push('T-Shirt');
   }
 
   // All Prime events 
@@ -124,37 +129,6 @@ export async function syncRegistrations() {
 
       for (const reg of validRegistrations) {
         try {
-          // Find Event by sourceEventCode (VTOPIA event_id)
-          const eventIdFromApi = typeof reg.event_id === 'number' ? reg.event_id : parseInt(reg.event_id, 10);
-          if (isNaN(eventIdFromApi)) {
-            console.warn(`[VTOPIA Sync] Invalid event_id for registration ${reg.registration_id}`);
-            errorCount++;
-            continue;
-          }
-
-          let event = await prisma.event.findUnique({
-            where: { sourceEventCode: eventIdFromApi }
-          });
-
-          // Create event if missing based on product name
-          if (!event) {
-             event = await prisma.event.create({
-                data: {
-                   name: reg.product || `VTOPIA Event ${eventIdFromApi}`,
-                   description: "Imported from VTOPIA API",
-                   date: BigInt(Date.now()), // Or parsed from event_date
-                   venue: "TBD",
-                   capacity: 10000,
-                   price: 0,
-                   isActive: true,
-                   category: 'day',
-                   sourceEventCode: eventIdFromApi,
-                   createdAt: BigInt(Date.now())
-                }
-             })
-             console.log(`[VTOPIA Sync] Created missing event: ${reg.product}`);
-          }
-
           // Handle User
           const userEmail = typeof reg.email === 'string' ? reg.email.toLowerCase().trim() : null;
           if (!userEmail) {
@@ -189,6 +163,25 @@ export async function syncRegistrations() {
           });
           
           const targetOrderId = existingOrder?.orderId || reg.order_id || `VTOPIA-${reg.registration_id}`;
+
+          let primaryToken = 'DAY_1';
+          if (parsedMeta.tokens.includes('PRANAV')) primaryToken = 'PRANAV';
+          else if (parsedMeta.tokens.includes('UDAYA')) primaryToken = 'UDAYA';
+          else if (parsedMeta.tokens.includes('DAY_1')) primaryToken = 'DAY_1';
+          else if (parsedMeta.tokens.includes('DAY_2')) primaryToken = 'DAY_2';
+          else if (parsedMeta.tokens.includes('DAY_3')) primaryToken = 'DAY_3';
+          else if (parsedMeta.tokens.includes('TSHIRT')) primaryToken = 'TSHIRT';
+
+          let event = await prisma.event.findFirst({
+            where: { accessToken: primaryToken }
+          });
+
+          if (!event) {
+             event = await prisma.event.findFirst({ where: { accessToken: "DAY_1" }});
+             if (!event) throw new Error("DAY_1 event not found");
+          }
+
+          const eventIdFromApi = typeof reg.event_id === 'number' ? reg.event_id : parseInt(reg.event_id, 10);
 
           await prisma.order.upsert({
             where: { orderId: targetOrderId },
