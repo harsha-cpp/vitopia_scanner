@@ -51,8 +51,26 @@ export default function GenerateTicketsPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [registrationId, setRegistrationId] = useState("");
-  const [phone, setPhone] = useState("");
-    const quantity = 1;
+  const quantity = 1;
+
+  // Extract regNo from email like rishi.23bce8982@vitapstudent.ac.in → 23BCE8982
+  const extractRegNo = (emailStr: string): string => {
+    const match = emailStr.match(/\.(\d{2}[a-zA-Z]{2,4}\d{3,5})@/);
+    return match ? match[1].toUpperCase() : "";
+  };
+
+  const randomPhone = (): string => {
+    const prefixes = ["98", "97", "96", "95", "94", "93", "91", "90", "89", "88", "87", "86", "85", "84", "83", "82", "81", "80", "79", "78", "77", "76", "75", "74", "73", "72", "71", "70"];
+    const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+    const rest = Array.from({ length: 8 }, () => Math.floor(Math.random() * 10)).join("");
+    return `${prefix}${rest}`;
+  };
+
+  const handleEmailChange = (val: string) => {
+    setEmail(val);
+    const extracted = extractRegNo(val);
+    if (extracted) setRegistrationId(extracted);
+  };
 
   // Submission state
   const [submitting, setSubmitting] = useState(false);
@@ -73,7 +91,6 @@ export default function GenerateTicketsPage() {
     setName("");
     setEmail("");
     setRegistrationId("");
-    setPhone("");
             setError("");
     setStep("");
   };
@@ -91,7 +108,7 @@ export default function GenerateTicketsPage() {
       const userResult = await createUser({
         email: email.trim(),
         name: name.trim(),
-        phone: phone.trim() || undefined,
+        phone: randomPhone(),
         college: "VIT-AP University",
       });
 
@@ -228,7 +245,7 @@ export default function GenerateTicketsPage() {
               <input
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => handleEmailChange(e.target.value)}
                 placeholder="john@example.com"
                 required
                 className="w-full bg-[#111] border border-[#333] rounded-lg px-4 py-3 text-white placeholder:text-gray-600 focus:outline-none focus:border-[#9AE600] transition-colors"
@@ -243,16 +260,6 @@ export default function GenerateTicketsPage() {
                 value={registrationId}
                 onChange={(e) => setRegistrationId(e.target.value)}
                 placeholder="e.g. 22BCE1234"
-                className="w-full bg-[#111] border border-[#333] rounded-lg px-4 py-3 text-white placeholder:text-gray-600 focus:outline-none focus:border-[#9AE600] transition-colors"
-              />
-            </div>
-            <div>
-              <label className="block text-sm text-gray-400 mb-2">Phone</label>
-              <input
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="+91 9876543210"
                 className="w-full bg-[#111] border border-[#333] rounded-lg px-4 py-3 text-white placeholder:text-gray-600 focus:outline-none focus:border-[#9AE600] transition-colors"
               />
             </div>

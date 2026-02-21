@@ -358,7 +358,12 @@ function buildOrderWhereClause(filters: {
   }
 
   if (filters.eventId) {
-    where.eventId = filters.eventId;
+    const isUuid = UUID_REGEX.test(filters.eventId);
+    if (isUuid) {
+      where.event = { OR: [{ id: filters.eventId }, { convexId: filters.eventId }] };
+    } else {
+      where.event = { convexId: filters.eventId };
+    }
   }
 
   if (filters.mailed === "true") {
