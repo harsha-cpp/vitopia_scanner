@@ -7,16 +7,16 @@ import { dirname, join } from "path";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const LOGO_PATH = join(__dirname, "../assets/vitopia.png");
 
-const BG_COLOR   = "#0A0A0A";
+const BG_COLOR   = "#FFFFFF";
 const MODULE_PX  = 22;   // pixels per QR module
-const DOT_RADIUS = 6;    // rounded corner radius
+const DOT_RADIUS = 4;    // rounded corner radius
 
 // Red → orange gradient (pulled from VITopia logo palette)
-const GRAD_START = { r: 230, g: 30,  b: 10  };
-const GRAD_END   = { r: 255, g: 160, b: 0   };
+const GRAD_START = { r: 180, g: 10,  b: 0  };
+const GRAD_END   = { r: 200, g: 100, b: 0   };
 
 // Logo occupies 28% of QR width — safe with ERROR_CORRECT_H (30% damage tolerance)
-const LOGO_RATIO = 0.28;
+const LOGO_RATIO = 0.18;
 
 function toHex(n: number): string {
   return n.toString(16).padStart(2, "0");
@@ -39,7 +39,7 @@ async function getModuleMatrix(token: string): Promise<boolean[][]> {
   const svgStr = await QRCode.toString(token, {
     type: "svg",
     errorCorrectionLevel: "H",
-    margin: 0,
+    margin: 2,
   } as Parameters<typeof QRCode.toString>[1]);
 
   // Parse the declared grid size from the SVG viewBox
@@ -91,14 +91,7 @@ export async function generateStyledQRImage(qrToken: string): Promise<Buffer> {
     .raw()
     .toBuffer({ resolveWithObject: true });
 
-  // Make near-black pixels transparent so logo blends into dark BG
-  for (let i = 0; i < logoPixels.length; i += 4) {
-    const maxCh = Math.max(logoPixels[i], logoPixels[i + 1], logoPixels[i + 2]);
-    if (maxCh < 35) {
-      const alpha = Math.max(0, Math.min(255, ((maxCh - 15) / 20) * 255));
-      logoPixels[i + 3] = Math.floor((logoPixels[i + 3] / 255) * alpha);
-    }
-  }
+  // Disabled transparency mod for white background
 
   const logoPng = await sharp(logoPixels, {
     raw: { width: logoW, height: logoH, channels: 4 },
@@ -124,12 +117,12 @@ export async function generateStyledQRImage(qrToken: string): Promise<Buffer> {
       if (!modules[row][col]) continue;
       if (row >= rowS && row < rowE && col >= colS && col < colE) continue;
 
-      const x = col * MODULE_PX + 1;
-      const y = row * MODULE_PX + 1;
-      const s = MODULE_PX - 2;
+      const x = col * MODULE_PX;
+      const y = row * MODULE_PX;
+      const s = MODULE_PX + 1;
       const fill = gradColorHex(col, row, size);
       rects.push(
-        `<rect x="${x}" y="${y}" width="${s}" height="${s}" rx="${DOT_RADIUS}" ry="${DOT_RADIUS}" fill="${fill}"/>`
+        `<rect x="${x}" y="${y}" width="${s}" height="${s}"  fill="${fill}"/>`
       );
     }
   }

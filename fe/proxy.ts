@@ -6,7 +6,7 @@ const AUTH_SECRET = new TextEncoder().encode(
   process.env.AUTH_SECRET || "opus-fest-auth-secret-2026"
 );
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (

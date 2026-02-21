@@ -1,4 +1,4 @@
-import Redis from "ioredis";
+import { Redis } from "ioredis";
 
 const LOCK_TTL = 5000; // 5 seconds lock timeout
 const LOCK_PREFIX = "lock:ticket:";

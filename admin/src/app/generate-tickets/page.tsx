@@ -52,8 +52,7 @@ export default function GenerateTicketsPage() {
   const [email, setEmail] = useState("");
   const [registrationId, setRegistrationId] = useState("");
   const [phone, setPhone] = useState("");
-  const [college, setCollege] = useState("");
-  const [quantity, setQuantity] = useState(1);
+    const quantity = 1;
 
   // Submission state
   const [submitting, setSubmitting] = useState(false);
@@ -75,9 +74,7 @@ export default function GenerateTicketsPage() {
     setEmail("");
     setRegistrationId("");
     setPhone("");
-    setCollege("");
-    setQuantity(1);
-    setError("");
+            setError("");
     setStep("");
   };
 
@@ -95,7 +92,7 @@ export default function GenerateTicketsPage() {
         email: email.trim(),
         name: name.trim(),
         phone: phone.trim() || undefined,
-        college: college.trim() || undefined,
+        college: "VIT-AP University",
       });
 
       if (!userResult) {
@@ -191,7 +188,7 @@ export default function GenerateTicketsPage() {
               </div>
             ) : (
               <div className="flex flex-wrap gap-2">
-                {events.map((ev) => (
+                {events.filter(ev => ev.isActive && ev.name !== "IGNORE_ME_ARCHIVED" && ev.name !== "Event Registration").map((ev) => (
                   <button
                     key={ev._id}
                     type="button"
@@ -259,27 +256,8 @@ export default function GenerateTicketsPage() {
                 className="w-full bg-[#111] border border-[#333] rounded-lg px-4 py-3 text-white placeholder:text-gray-600 focus:outline-none focus:border-[#9AE600] transition-colors"
               />
             </div>
-            <div>
-              <label className="block text-sm text-gray-400 mb-2">College</label>
-              <input
-                type="text"
-                value={college}
-                onChange={(e) => setCollege(e.target.value)}
-                placeholder="VIT-AP University"
-                className="w-full bg-[#111] border border-[#333] rounded-lg px-4 py-3 text-white placeholder:text-gray-600 focus:outline-none focus:border-[#9AE600] transition-colors"
-              />
-            </div>
-            <div>
-              <label className="block text-sm text-gray-400 mb-2">Quantity</label>
-              <input
-                type="number"
-                value={quantity}
-                onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-                min={1}
-                max={10}
-                className="w-full bg-[#111] border border-[#333] rounded-lg px-4 py-3 text-white placeholder:text-gray-600 focus:outline-none focus:border-[#9AE600] transition-colors"
-              />
-            </div>
+
+
           </div>
 
           {/* Error */}

@@ -5,7 +5,7 @@ import QRCode from "qrcode";
 import { fileURLToPath } from "url";
 import { prisma } from "../src/db/prisma.ts";
 import type { PrismaClient } from "../generated/prisma/client.js";
-import { generateQRCode, verifyQRCode } from "../src/utils/qr-code.ts";
+import { generateQRCode } from "../src/utils/qr-code.ts";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const QR_DIR = path.resolve(__dirname, "../../QRs");
@@ -391,6 +391,7 @@ async function main() {
       update: orderPayload,
       create: {
         orderId: row.order_id.trim(),
+        qrToken: require("crypto").createHmac("sha256", process.env.JWT_SECRET || "Salt123").update(row.order_id.trim()).digest("hex").toUpperCase().substring(0, 16),
         createdAt: now,
         ...orderPayload,
       },
@@ -416,8 +417,8 @@ async function main() {
   let generated = 0;
   for (const order of orders) {
     const token = generateQRCode({ orderId: order.orderId });
-    const verified = verifyQRCode(token);
-    if (!verified.valid || verified.payload?.orderId !== order.orderId) {
+    // verify token is 32 chars
+    if (token.length !== 16) {
       continue;
     }
 

@@ -45,3 +45,21 @@ coverage/
 
 # Generated QR Codes
 qr/
+QRs/
+
+# Throwaway patch/fix/test scripts (root level)
+fix_*.js
+patch_*.js
+qr_*.js
+make_*.js
+rewrite_*.js
+test_*.js
+test.png
+/test-events.ts
+
+# Backend throwaway test scripts
+be/test-events.ts
+be/test-tickets.ts
+be/scripts/test-generation*.ts
+be/scripts/test-scan*.ts
+be/prisma/schema.prisma.patch

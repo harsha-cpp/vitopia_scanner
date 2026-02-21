@@ -11,13 +11,16 @@ const router: Router = Router();
  */
 router.get("/", async (req: Request, res: Response) => {
   try {
-    const { search, paymentStatus, eventId, mailed, page, limit } = req.query;
+    const { search, paymentStatus, eventId, mailed, checkedIn, dateFrom, dateTo, page, limit } = req.query;
     
     const result = await ordersRepo.listOrders({
       search: search as string,
       paymentStatus: paymentStatus as string,
       eventId: eventId as string,
       mailed: mailed as string,
+      checkedIn: checkedIn as string,
+      dateFrom: dateFrom as string,
+      dateTo: dateTo as string,
       page: page ? parseInt(page as string) : 1,
       limit: limit ? parseInt(limit as string) : 50,
     });
@@ -26,6 +29,27 @@ router.get("/", async (req: Request, res: Response) => {
   } catch (error) {
     console.error("Error listing orders:", error);
     res.status(500).json({ success: false, error: "Failed to list orders" });
+  }
+});
+
+router.get("/ids", async (req: Request, res: Response) => {
+  try {
+    const { search, paymentStatus, eventId, mailed, checkedIn, dateFrom, dateTo } = req.query;
+    
+    const orderIds = await ordersRepo.listOrderIds({
+      search: search as string,
+      paymentStatus: paymentStatus as string,
+      eventId: eventId as string,
+      mailed: mailed as string,
+      checkedIn: checkedIn as string,
+      dateFrom: dateFrom as string,
+      dateTo: dateTo as string,
+    });
+    
+    res.json({ success: true, data: orderIds });
+  } catch (error) {
+    console.error("Error listing order IDs:", error);
+    res.status(500).json({ success: false, error: "Failed to list order IDs" });
   }
 });
 

@@ -79,6 +79,7 @@ model Order {
   id            String        @id @default(uuid()) @db.Uuid
   convexId      String?       @unique @map("convex_id")
   orderId       String        @unique @map("order_id")
+  qrToken       String?       @unique @map("qr_token")
   receiptId     String?       @map("receipt_id")
   productMeta   String?       @map("product_meta")
   invoiceNumber String?       @map("invoice_number")

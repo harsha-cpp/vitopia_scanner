@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import { prisma as basePrisma } from "./prisma.js";
 import type {
   Event,
@@ -47,6 +48,7 @@ export interface MappedOrderEvent {
 }
 
 export interface MappedOrder {
+  qrToken: string | null;
   _id: string;
   _creationTime: number;
   id: string;
@@ -79,6 +81,12 @@ export interface MappedOrder {
 export interface MappedOrderWithRelations extends MappedOrder {
   user: MappedOrderUser | null;
   event: MappedOrderEvent | null;
+}
+
+
+function generateQrToken(orderId: string): string {
+  const secret = process.env.JWT_SECRET || "Salt123";
+  return crypto.createHmac("sha256", secret).update(orderId).digest("hex").toUpperCase().substring(0, 16);
 }
 
 function generateOrderId(): string {
@@ -132,6 +140,7 @@ function mapOrder(
     id: dbOrder.id,
     convexId: dbOrder.convexId,
     orderId: dbOrder.orderId,
+    qrToken: dbOrder.qrToken,
     receiptId: dbOrder.receiptId,
     productMeta: dbOrder.productMeta,
     invoiceNumber: dbOrder.invoiceNumber,
@@ -180,6 +189,7 @@ async function resolveEvent(
 }
 
 export async function create(data: {
+  orderId?: string;
   userId: string;
   eventId: string;
   quantity: number;
@@ -235,9 +245,11 @@ export async function create(data: {
         ? [event.accessToken]
         : [];
 
+    const newOrderId = data.orderId || generateOrderId();
     const order = await tx.order.create({
       data: {
-        orderId: generateOrderId(),
+        orderId: newOrderId,
+        qrToken: generateQrToken(newOrderId),
         receiptId: data.receiptId,
         productMeta: data.productMeta,
         invoiceNumber: data.invoiceNumber,
@@ -330,24 +342,21 @@ export const ORDER_PAYMENT_STATUSES: Readonly<OrderPaymentStatus[]> = [
 ] as const;
 
 
-export async function listOrders(filters: {
+function buildOrderWhereClause(filters: {
   search?: string;
   paymentStatus?: string;
   eventId?: string;
   mailed?: string;
-  page?: number;
-  limit?: number;
-}) {
-  const page = filters.page || 1;
-  const limit = filters.limit || 50;
-  const skip = (page - 1) * limit;
-
+  checkedIn?: string;
+  dateFrom?: string;
+  dateTo?: string;
+}): any {
   const where: any = {};
-  
+
   if (filters.paymentStatus) {
     where.paymentStatus = filters.paymentStatus;
   }
-  
+
   if (filters.eventId) {
     where.eventId = filters.eventId;
   }
@@ -358,6 +367,25 @@ export async function listOrders(filters: {
     where.mailed = false;
   }
 
+  if (filters.checkedIn === "true") {
+    where.checkedIn = true;
+  } else if (filters.checkedIn === "false") {
+    where.checkedIn = false;
+  }
+
+  if (filters.dateFrom || filters.dateTo) {
+    where.createdAt = {};
+    if (filters.dateFrom) {
+      where.createdAt.gte = BigInt(new Date(filters.dateFrom).getTime());
+    }
+    if (filters.dateTo) {
+      // End of the selected day
+      const endDate = new Date(filters.dateTo);
+      endDate.setHours(23, 59, 59, 999);
+      where.createdAt.lte = BigInt(endDate.getTime());
+    }
+  }
+
   if (filters.search) {
     where.OR = [
       { orderId: { contains: filters.search, mode: 'insensitive' } },
@@ -366,6 +394,26 @@ export async function listOrders(filters: {
       { user: { email: { contains: filters.search, mode: 'insensitive' } } }
     ];
   }
+
+  return where;
+}
+
+export async function listOrders(filters: {
+  search?: string;
+  paymentStatus?: string;
+  eventId?: string;
+  mailed?: string;
+  checkedIn?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  page?: number;
+  limit?: number;
+}) {
+  const page = filters.page || 1;
+  const limit = filters.limit || 50;
+  const skip = (page - 1) * limit;
+
+  const where = buildOrderWhereClause(filters);
 
   const [orders, total] = await Promise.all([
     prisma.order.findMany({
@@ -399,6 +447,26 @@ export async function listOrders(filters: {
     page,
     totalPages: Math.ceil(total / limit)
   };
+}
+
+export async function listOrderIds(filters: {
+  search?: string;
+  paymentStatus?: string;
+  eventId?: string;
+  mailed?: string;
+  checkedIn?: string;
+  dateFrom?: string;
+  dateTo?: string;
+}) {
+  const where = buildOrderWhereClause(filters);
+
+  const orders = await prisma.order.findMany({
+    where,
+    select: { orderId: true },
+    orderBy: { createdAt: 'desc' },
+  });
+
+  return orders.map(o => o.orderId);
 }
 
 

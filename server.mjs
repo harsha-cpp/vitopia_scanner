@@ -7,7 +7,7 @@ const port = parseInt(process.env.PORT || "3000", 10);
 const dev = process.env.NODE_ENV !== "production";
 
 try {
-  const nextApp = next({ dev, dir: "./fe" });
+  const nextApp = next({ dev, dir: "./fe", turbopack: false, webpack: true });
   const handle = nextApp.getRequestHandler();
 
   await nextApp.prepare();

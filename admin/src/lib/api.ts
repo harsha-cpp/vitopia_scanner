@@ -319,6 +319,9 @@ export interface OrderFilter {
   paymentStatus?: string;
   eventId?: string;
   mailed?: string;
+  checkedIn?: string;
+  dateFrom?: string;
+  dateTo?: string;
   page?: number;
   limit?: number;
 }
@@ -336,11 +339,28 @@ export async function listOrders(filter: OrderFilter): Promise<ListOrdersRespons
   if (filter.paymentStatus) params.append("paymentStatus", filter.paymentStatus);
   if (filter.eventId) params.append("eventId", filter.eventId);
   if (filter.mailed) params.append("mailed", filter.mailed);
+  if (filter.checkedIn) params.append("checkedIn", filter.checkedIn);
+  if (filter.dateFrom) params.append("dateFrom", filter.dateFrom);
+  if (filter.dateTo) params.append("dateTo", filter.dateTo);
   if (filter.page) params.append("page", filter.page.toString());
   if (filter.limit) params.append("limit", filter.limit.toString());
   
   const response = await fetchApi<ListOrdersResponse>(`/api/orders?${params.toString()}`);
   return response.data || null;
+}
+
+export async function fetchAllMatchingOrderIds(filter: Omit<OrderFilter, 'page' | 'limit'>): Promise<string[]> {
+  const params = new URLSearchParams();
+  if (filter.search) params.append("search", filter.search);
+  if (filter.paymentStatus) params.append("paymentStatus", filter.paymentStatus);
+  if (filter.eventId) params.append("eventId", filter.eventId);
+  if (filter.mailed) params.append("mailed", filter.mailed);
+  if (filter.checkedIn) params.append("checkedIn", filter.checkedIn);
+  if (filter.dateFrom) params.append("dateFrom", filter.dateFrom);
+  if (filter.dateTo) params.append("dateTo", filter.dateTo);
+
+  const response = await fetchApi<string[]>(`/api/orders/ids?${params.toString()}`);
+  return response.data || [];
 }
 
 export async function updateOrder(orderId: string, data: Partial<Order>): Promise<Order | null> {

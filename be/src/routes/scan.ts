@@ -1,6 +1,7 @@
+import { prisma } from "../db/prisma.js";
 import { Router, Request, Response } from "express";
 import { getRedisLockManager } from "../utils/redis-lock.js";
-import { verifyQRCode } from "../utils/qr-code.js";
+import { extractLegacyOrderId } from "../utils/qr-code.js";
 import { gateAuthMiddleware, rateLimitMiddleware } from "../middleware/auth.js";
 import {
   checkIn,
@@ -38,17 +39,26 @@ router.post(
     const lockManager = getRedisLockManager();
 
     try {
-      const qrResult = verifyQRCode(qrCode);
-      if (!qrResult.valid || !qrResult.payload) {
-        res.status(400).json({
-          success: false,
-          error: qrResult.error || "Invalid QR code",
-          code: "INVALID_QR",
-          responseTime: Date.now() - startTime,
+
+      let orderId = extractLegacyOrderId(qrCode);
+      if (!orderId) {
+        const order = await (prisma as any).order.findUnique({
+          where: { qrToken: qrCode.toUpperCase() },
+          select: { orderId: true }
         });
-        return;
+        if (!order) {
+          res.status(400).json({
+            success: false,
+            error: "Invalid QR code",
+            code: "INVALID_QR",
+          responseTime: Date.now() - startTime
+        
+          });
+          return;
+        }
+        orderId = order.orderId as string;
       }
-      const { orderId } = qrResult.payload;
+
 
       // Step 2: Check Redis cache for fast rejection
       const cachedResult = await lockManager.getCachedScanResult(orderId, eventId);
@@ -214,16 +224,24 @@ router.post(
     }
 
     try {
-      const qrResult = verifyQRCode(qrCode);
-      if (!qrResult.valid || !qrResult.payload) {
-        res.status(400).json({
-          success: false,
-          error: qrResult.error || "Invalid QR code",
-          code: "INVALID_QR",
+
+      let orderId = extractLegacyOrderId(qrCode);
+      if (!orderId) {
+        const order = await (prisma as any).order.findUnique({
+          where: { qrToken: qrCode.toUpperCase() },
+          select: { orderId: true }
         });
-        return;
+        if (!order) {
+          res.status(400).json({
+            success: false,
+            error: "Invalid QR code",
+            code: "INVALID_QR"
+          });
+          return;
+        }
+        orderId = order.orderId as string;
       }
-      const { orderId } = qrResult.payload;
+
 
       const result = await validate(orderId, eventId);
 
@@ -281,16 +299,24 @@ router.post(
     }
 
     try {
-      const qrResult = verifyQRCode(qrCode);
-      if (!qrResult.valid || !qrResult.payload) {
-        res.status(400).json({
-          success: false,
-          error: qrResult.error || "Invalid QR code",
-          code: "INVALID_QR",
+
+      let orderId = extractLegacyOrderId(qrCode);
+      if (!orderId) {
+        const order = await (prisma as any).order.findUnique({
+          where: { qrToken: qrCode.toUpperCase() },
+          select: { orderId: true }
         });
-        return;
+        if (!order) {
+          res.status(400).json({
+            success: false,
+            error: "Invalid QR code",
+            code: "INVALID_QR"
+          });
+          return;
+        }
+        orderId = order.orderId as string;
       }
-      const { orderId } = qrResult.payload;
+
 
       const history = await getScanHistoryByOrderId(orderId);
       if (!history) {

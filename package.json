@@ -15,7 +15,7 @@
     "build:be": "pnpm --filter be build",
     "build:admin": "pnpm --filter admin build",
     "render:build": "pnpm --filter fe build && pnpm --filter be build",
-    "start": "node server.mjs",
+    "start": "npx tsx server.mjs",
     "render:start": "node server.mjs",
     "redis:up": "docker compose up -d",
     "redis:down": "docker compose down",
@@ -24,11 +24,22 @@
   },
   "packageManager": "pnpm@10.27.0",
   "pnpm": {
-    "onlyBuiltDependencies": ["@prisma/engines", "esbuild", "prisma", "sharp", "unrs-resolver"]
+    "onlyBuiltDependencies": [
+      "@prisma/engines",
+      "esbuild",
+      "prisma",
+      "sharp",
+      "unrs-resolver"
+    ]
   },
   "dependencies": {
     "axios": "^1.13.5",
     "node-cron": "^4.2.1",
-    "pg": "^8.18.0"
+    "pg": "^8.18.0",
+    "tsx": "^4.21.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.18",
+    "tailwindcss": "^4.1.18"
   }
 }

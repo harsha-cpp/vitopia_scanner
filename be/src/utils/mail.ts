@@ -12,7 +12,7 @@ export function getResend(): Resend {
     return _resend;
 }
 
-const FROM_EMAIL = process.env.MAIL_FROM || "VITopia '26 <tickets@vitopia.vitap.ac.in>";
+const FROM_EMAIL = process.env.MAIL_FROM || "VITopia '26 <tickets@vitap.ac.in>";
 
 export interface TicketEmailData {
     name: string;
