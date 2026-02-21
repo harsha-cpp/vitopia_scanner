@@ -72,6 +72,7 @@ export interface CheckInFailure {
   eventId?: string;
   checkedInAt?: number | null;
   checkedInBy?: string | null;
+  checkedInByName?: string | null;
   order?: ScanOrderContext;
   user?: ScanUserContext | null;
   event?: ScanEventContext | null;
@@ -98,6 +99,7 @@ export interface ValidateFailure {
   reason: "already_used" | "not_paid" | "not_found" | "wrong_event";
   checkedInAt?: number | null;
   checkedInBy?: string | null;
+  checkedInByName?: string | null;
 }
 
 export type ValidateResult = ValidateSuccess | ValidateFailure;
@@ -237,9 +239,9 @@ function mapCheckInContext(
     order: mapOrderContext(order),
     user: order.user
       ? {
-          name: order.user.name,
-          email: order.user.email,
-        }
+        name: order.user.name,
+        email: order.user.email,
+      }
       : null,
     event: mapEventContext(effectiveEvent),
   };
@@ -327,20 +329,34 @@ export async function checkIn(input: {
       });
 
       if (existingSuccess) {
+        const scannerGate = await tx.gate.findUnique({
+          where: { gateId: existingSuccess.scannedBy },
+          select: { name: true },
+        });
+
         return {
           success: false,
           reason: "already_used",
           checkedInAt: Number(existingSuccess.timestamp),
           checkedInBy: existingSuccess.scannedBy,
+          checkedInByName: scannerGate?.name || existingSuccess.scannedBy,
           ...context,
         };
       }
     } else if (order.checkedIn) {
+      const scannerGate = order.checkedInBy
+        ? await tx.gate.findUnique({
+          where: { gateId: order.checkedInBy },
+          select: { name: true },
+        })
+        : null;
+
       return {
         success: false,
         reason: "already_used",
         checkedInAt: order.checkedInAt ? Number(order.checkedInAt) : null,
         checkedInBy: order.checkedInBy,
+        checkedInByName: scannerGate?.name || order.checkedInBy,
         ...context,
       };
     }
@@ -415,19 +431,33 @@ export async function validate(
     });
 
     if (existingSuccess) {
+      const scannerGate = await prisma.gate.findUnique({
+        where: { gateId: existingSuccess.scannedBy },
+        select: { name: true },
+      });
+
       return {
         valid: false,
         reason: "already_used",
         checkedInAt: Number(existingSuccess.timestamp),
         checkedInBy: existingSuccess.scannedBy,
+        checkedInByName: scannerGate?.name || existingSuccess.scannedBy,
       };
     }
   } else if (order.checkedIn) {
+    const scannerGate = order.checkedInBy
+      ? await prisma.gate.findUnique({
+        where: { gateId: order.checkedInBy },
+        select: { name: true },
+      })
+      : null;
+
     return {
       valid: false,
       reason: "already_used",
       checkedInAt: order.checkedInAt ? Number(order.checkedInAt) : null,
       checkedInBy: order.checkedInBy,
+      checkedInByName: scannerGate?.name || order.checkedInBy,
     };
   }
 
@@ -449,15 +479,15 @@ export async function validate(
     },
     user: order.user
       ? {
-          name: order.user.name,
-          email: order.user.email,
-        }
+        name: order.user.name,
+        email: order.user.email,
+      }
       : null,
     event: resolvedEvent
       ? {
-          name: resolvedEvent.name,
-          venue: resolvedEvent.venue,
-        }
+        name: resolvedEvent.name,
+        venue: resolvedEvent.venue,
+      }
       : null,
   };
 }
@@ -559,9 +589,9 @@ export async function getScanHistoryByOrderId(
     orderId: order.orderId,
     user: order.user
       ? {
-          name: order.user.name,
-          email: order.user.email,
-        }
+        name: order.user.name,
+        email: order.user.email,
+      }
       : null,
     purchasedEvents,
     lastScannedAt: logs.length > 0 ? Number(logs[0].timestamp) : null,
@@ -572,11 +602,11 @@ export async function getScanHistoryByOrderId(
       timestamp: Number(log.timestamp),
       event: log.event
         ? {
-            id: toExternalId(log.event.id, log.event.convexId),
-            name: log.event.name,
-            accessToken: log.event.accessToken,
-            category: log.event.category,
-          }
+          id: toExternalId(log.event.id, log.event.convexId),
+          name: log.event.name,
+          accessToken: log.event.accessToken,
+          category: log.event.category,
+        }
         : null,
     })),
   };
@@ -590,13 +620,13 @@ export async function getStats(eventId: string): Promise<ScanStats | null> {
 
   const orderWhere = event.accessToken
     ? {
-        paymentStatus: "paid" as const,
-        accessTokens: { has: event.accessToken },
-      }
+      paymentStatus: "paid" as const,
+      accessTokens: { has: event.accessToken },
+    }
     : {
-        paymentStatus: "paid" as const,
-        eventId: event.id,
-      };
+      paymentStatus: "paid" as const,
+      eventId: event.id,
+    };
 
   const [orders, successfulScans] = await Promise.all([
     prisma.order.findMany({ where: orderWhere }),

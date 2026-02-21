@@ -1,4 +1,5 @@
-import { prisma } from "../db/prisma.js";
+import { prisma as basePrisma } from "../db/prisma.js";
+const prisma = basePrisma as any;
 import { Router, Request, Response } from "express";
 import { getRedisLockManager } from "../utils/redis-lock.js";
 import { extractLegacyOrderId } from "../utils/qr-code.js";
@@ -51,8 +52,8 @@ router.post(
             success: false,
             error: "Invalid QR code",
             code: "INVALID_QR",
-          responseTime: Date.now() - startTime
-        
+            responseTime: Date.now() - startTime
+
           });
           return;
         }
@@ -82,6 +83,8 @@ router.post(
           error: "Ticket has already been used",
           code: "ALREADY_USED",
           checkedInAt: cachedResult.checkedInAt,
+          checkedInBy: cachedResult.checkedInBy,
+          checkedInByName: cachedResult.checkedInByName,
           data,
           responseTime: Date.now() - startTime,
         });
@@ -111,7 +114,19 @@ router.post(
 
         // Step 6: Update cache and log
         if (result.success) {
-          await lockManager.cacheScanResult(orderId, "already_used", Date.now(), eventId);
+          const scannerGate = await prisma.gate.findUnique({
+            where: { gateId: gate.id },
+            select: { name: true },
+          });
+
+          await lockManager.cacheScanResult(
+            orderId,
+            "already_used",
+            Date.now(),
+            eventId,
+            gate.id,
+            scannerGate?.name || gate.id
+          );
           if (result.eventId) {
             await lockManager.incrementScanCount(result.eventId);
           }
@@ -130,21 +145,23 @@ router.post(
             success: true,
             message: "Entry allowed",
             code: "VALID",
-          data: {
-            ...result.order,
-            user: result.user,
-            event: result.event,
-          },
-          responseTime: Date.now() - startTime,
-        });
-      } else {
+            data: {
+              ...result.order,
+              user: result.user,
+              event: result.event,
+            },
+            responseTime: Date.now() - startTime,
+          });
+        } else {
           // Cache invalid results
           if (result.reason === "already_used") {
             await lockManager.cacheScanResult(
               orderId,
               "already_used",
               result.checkedInAt || Date.now(),
-              eventId
+              eventId,
+              result.checkedInBy || undefined,
+              result.checkedInByName || undefined
             );
           }
 
@@ -180,6 +197,7 @@ router.post(
             code: result.reason.toUpperCase(),
             checkedInAt: result.checkedInAt,
             checkedInBy: result.checkedInBy,
+            checkedInByName: result.checkedInByName,
             data: {
               ...result.order,
               user: result.user,
@@ -269,6 +287,8 @@ router.post(
           error: result.reason,
           code: result.reason.toUpperCase(),
           checkedInAt: result.checkedInAt,
+          checkedInBy: result.checkedInBy,
+          checkedInByName: result.checkedInByName,
         });
       }
     } catch (error) {

@@ -19,7 +19,7 @@ export class RedisLockManager {
   async acquireLock(orderId: string): Promise<string | null> {
     const lockKey = `${LOCK_PREFIX}${orderId}`;
     const lockToken = `${Date.now()}-${Math.random().toString(36).substring(7)}`;
-    
+
     // SET NX with expiry for atomic lock acquisition
     const result = await this.redis.set(
       lockKey,
@@ -41,7 +41,7 @@ export class RedisLockManager {
    */
   async releaseLock(orderId: string, lockToken: string): Promise<boolean> {
     const lockKey = `${LOCK_PREFIX}${orderId}`;
-    
+
     // Lua script for atomic check-and-delete
     const script = `
       if redis.call("get", KEYS[1]) == ARGV[1] then
@@ -50,7 +50,7 @@ export class RedisLockManager {
         return 0
       end
     `;
-    
+
     const result = await this.redis.eval(script, 1, lockKey, lockToken);
     return result === 1;
   }
@@ -68,10 +68,12 @@ export class RedisLockManager {
     cached: boolean;
     result?: "already_used" | "invalid" | "not_found";
     checkedInAt?: number;
+    checkedInBy?: string;
+    checkedInByName?: string;
   }> {
     const cacheKey = this.getScanCacheKey(orderId, eventId);
     const cached = await this.redis.get(cacheKey);
-    
+
     if (cached) {
       try {
         const data = JSON.parse(cached);
@@ -80,7 +82,7 @@ export class RedisLockManager {
         return { cached: false };
       }
     }
-    
+
     return { cached: false };
   }
 
@@ -91,10 +93,12 @@ export class RedisLockManager {
     orderId: string,
     result: "already_used" | "invalid" | "not_found",
     checkedInAt?: number,
-    eventId?: string
+    eventId?: string,
+    checkedInBy?: string,
+    checkedInByName?: string
   ): Promise<void> {
     const cacheKey = this.getScanCacheKey(orderId, eventId);
-    const data = JSON.stringify({ result, checkedInAt });
+    const data = JSON.stringify({ result, checkedInAt, checkedInBy, checkedInByName });
     await this.redis.setex(cacheKey, SCAN_CACHE_TTL, data);
   }
 
@@ -140,7 +144,7 @@ export class RedisLockManager {
     // Count active locks for this event
     const lockPattern = `${LOCK_PREFIX}*`;
     const locks = await this.redis.keys(lockPattern);
-    
+
     // Get recent scan count
     const scanKey = `stats:scans:${eventId}:${Math.floor(Date.now() / 60000)}`;
     const recentScans = await this.redis.get(scanKey);
