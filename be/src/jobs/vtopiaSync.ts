@@ -24,7 +24,7 @@ function parseProductMeta(rawMeta: string | null) {
     displayNames.push('Pranav Sharma Show');
   }
   if (isUday) {
-    tokens.push('UDAYA');
+    tokens.push('UDAY');
     displayNames.push('Sarat Raja Uday Boddeda Show');
   }
 
@@ -166,7 +166,7 @@ export async function syncRegistrations() {
 
           let primaryToken = 'DAY_1';
           if (parsedMeta.tokens.includes('PRANAV')) primaryToken = 'PRANAV';
-          else if (parsedMeta.tokens.includes('UDAYA')) primaryToken = 'UDAYA';
+          else if (parsedMeta.tokens.includes('UDAY')) primaryToken = 'UDAY';
           else if (parsedMeta.tokens.includes('DAY_1')) primaryToken = 'DAY_1';
           else if (parsedMeta.tokens.includes('DAY_2')) primaryToken = 'DAY_2';
           else if (parsedMeta.tokens.includes('DAY_3')) primaryToken = 'DAY_3';
