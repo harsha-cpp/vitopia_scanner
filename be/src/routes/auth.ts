@@ -39,7 +39,7 @@ router.post("/login", async (req: Request, res: Response) => {
   // Check Scanners (Gates)
   try {
     const gate = await prisma.gate.findUnique({
-      where: { gateId: username },
+      where: { gateId: username.toUpperCase() },
     });
 
     if (gate && gate.secret === password) {

@@ -46,7 +46,7 @@ export async function gateAuthMiddleware(req: Request, res: Response, next: Next
 
   try {
     const gate = await prisma.gate.findUnique({
-      where: { gateId },
+      where: { gateId: gateId.toUpperCase() },
     });
 
     if (!gate || gate.secret !== gateSecret) {
