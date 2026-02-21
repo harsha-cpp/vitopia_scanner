@@ -37,8 +37,9 @@ export async function getDashboardData(): Promise<DashboardData> {
   const events = await prisma.event.findMany({
     where: {
       name: {
-        notIn: ["Event Registration", "VITopia 2026"]
-      }
+        notIn: ["Event Registration", "VITopia 2026", "IGNORE_ME_ARCHIVED"]
+      },
+      isActive: true
     }
   });
 
@@ -73,14 +74,18 @@ export async function getDashboardData(): Promise<DashboardData> {
         eventName: event.name,
         sold,
         checkedIn: checkedInCount,
-        remaining: event.capacity - sold,
+        remaining: sold - checkedInCount,
         capacity: event.capacity,
       };
     })
   );
 
-  const totalSold = eventAnalytics.reduce((s, e) => s + e.sold, 0);
-  const totalChecked = eventAnalytics.reduce((s, e) => s + e.checkedIn, 0);
+  const activeEventAnalytics = eventAnalytics.filter(
+    (e) => e.sold > 0 || e.checkedIn > 0
+  );
+
+  const totalSold = activeEventAnalytics.reduce((s, e) => s + e.sold, 0);
+  const totalChecked = activeEventAnalytics.reduce((s, e) => s + e.checkedIn, 0);
 
   const logs = await prisma.scanLog.findMany({
     orderBy: { timestamp: "desc" },
@@ -111,7 +116,7 @@ export async function getDashboardData(): Promise<DashboardData> {
       totalTicketsSold: totalSold,
       totalCheckedIn: totalChecked,
       totalRemaining: totalSold - totalChecked,
-      events: eventAnalytics,
+      events: activeEventAnalytics,
     },
     scanLogs: enrichedLogs,
   };
