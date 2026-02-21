@@ -24,12 +24,12 @@ function parseProductMeta(rawMeta: string | null) {
     displayNames.push('Pranav Sharma Show');
   }
   if (isUday) {
-    tokens.push('UDAYA');
+    tokens.push('UDAY');
     displayNames.push('Sarat Raja Uday Boddeda Show');
   }
 
   // Parsing Days
-  if (metaLower.includes('day-1') || metaLower.includes('day 1') || metaLower.includes('day1') || metaLower.includes('22nd feb event') || metaLower.includes('state rally')) {
+  if (metaLower.includes('day-1') || metaLower.includes('day 1') || metaLower.includes('day1') || metaLower.includes('22nd feb event')) {
     tokens.push('DAY_1');
     displayNames.push('Day 1');
   }
@@ -47,6 +47,9 @@ function parseProductMeta(rawMeta: string | null) {
   // All Prime events 
   if (metaLower.includes('all prime events')) {
     displayNames.push('All Prime Events');
+    if (!tokens.includes('DAY_1')) tokens.push('DAY_1');
+    if (!tokens.includes('DAY_2')) tokens.push('DAY_2');
+    if (!tokens.includes('DAY_3')) tokens.push('DAY_3');
   }
 
   // Create clean name
