@@ -66,8 +66,9 @@ h1, h2, h3, .font-heading {
 }
 
 .scanner-frame {
-  width: 250px;
-  height: 250px;
+  width: min(250px, 70%);
+  aspect-ratio: 1;
+  height: auto;
   border: 3px solid rgba(154, 230, 0, 0.8);
   border-radius: 16px;
   box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
@@ -129,4 +130,5 @@ button {
 /* Prevent zoom on input focus */
 input, select, textarea {
   font-size: 16px;
+  color-scheme: dark;
 }

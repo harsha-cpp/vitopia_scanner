@@ -59,9 +59,10 @@ export function buildEmailHtml(data: TicketEmailData): string {
           <!-- Hero Section -->
           <tr>
             <td style="padding:0 40px 32px;">
-              <div style="text-align:center;padding:36px 32px;background:rgba(154,230,0,0.04);border:1px dashed rgba(154,230,0,0.2);border-radius:24px;">
-                <h2 style="margin:0 0 10px;font-size:26px;font-weight:700;color:#ffffff;letter-spacing:-0.5px;">Confirmed, ${data.name.split(' ')[0]}.</h2>
-                <p style="margin:0;font-size:16px;color:#a0a0a0;line-height:1.6;max-width:300px;margin-left:auto;margin-right:auto;">Just show this at entry and you're solid.</p>
+              <div style="text-align:center;padding:48px 32px;background:linear-gradient(145deg, rgba(154,230,0,0.12) 0%, rgba(154,230,0,0.02) 100%);border:1px solid rgba(154,230,0,0.4);border-radius:24px;box-shadow: 0 12px 40px rgba(154,230,0,0.08);">
+                <div style="font-size:42px;margin-bottom:16px;line-height:1;">🎟️✨</div>
+                <h2 style="margin:0 0 12px;font-size:28px;font-weight:800;color:#ffffff;letter-spacing:-0.02em;text-transform:uppercase;">Confirmed, ${data.name.split(' ')[0]}.</h2>
+                <p style="margin:0;font-size:16px;color:#a0a0a0;line-height:1.6;max-width:300px;margin-left:auto;margin-right:auto;">Your access is secured. Just show this at entry and you're solid.</p>
               </div>
             </td>
           </tr>

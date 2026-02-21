@@ -13,6 +13,7 @@ import {
   RefreshCw,
   Volume2,
   VolumeX,
+  ChevronDown,
 } from "lucide-react";
 import { verifyTicket, ScanResult, getEvents, Event } from "@/lib/api";
 
@@ -299,6 +300,7 @@ export default function ScannerPage() {
           </div>
           <div className="flex items-center gap-2">
             <button
+              type="button"
               onClick={() => setSoundEnabled(!soundEnabled)}
               className="p-2 hover:bg-[#1a1a1a] rounded-lg transition-colors"
               title={soundEnabled ? "Mute sounds" : "Enable sounds"}
@@ -306,8 +308,9 @@ export default function ScannerPage() {
               {soundEnabled ? <Volume2 className="w-5 h-5 text-[#9AE600]" /> : <VolumeX className="w-5 h-5 text-[#99A1AF]" />}
             </button>
             <button
+              type="button"
               onClick={() => setShowSettings(!showSettings)}
-              className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${showSettings ? "bg-[#9AE600] text-black" : "bg-[#1a1a1a] text-[#99A1AF] hover:text-white"
+              className={`px-3 py-1.5 text-sm rounded-lg transition-colors min-h-[44px] ${showSettings ? "bg-[#9AE600] text-black" : "bg-[#1a1a1a] text-[#99A1AF] hover:text-white"
                 }`}
             >
               Settings
@@ -321,63 +324,69 @@ export default function ScannerPage() {
         {showSettings && (
           <div className="bg-[#0a0a0a] border border-[#1a1a1a] rounded-xl p-4 mb-6 space-y-4">
             <div>
-              <label className="block text-sm text-[#99A1AF] mb-2">Gate ID</label>
+              <label htmlFor="gateId" className="block text-sm text-[#99A1AF] mb-2">Gate ID</label>
               <input
+                id="gateId"
                 type="text"
                 value={gateId}
                 onChange={(e) => {
                   setGateId(e.target.value);
                   localStorage.setItem("gateId", e.target.value);
                 }}
-                className="w-full px-4 py-2 bg-black border border-[#1a1a1a] rounded-lg text-white focus:border-[#9AE600] focus:outline-none transition-colors"
+                className="w-full px-4 py-3 bg-black border border-[#1a1a1a] rounded-lg text-white focus:border-[#9AE600] focus:outline-none transition-colors min-h-[44px]"
                 placeholder="Enter gate identifier"
               />
             </div>
             <div>
-              <label className="block text-sm text-[#99A1AF] mb-2">Gate Secret</label>
+              <label htmlFor="gateSecret" className="block text-sm text-[#99A1AF] mb-2">Gate Secret</label>
               <input
+                id="gateSecret"
                 type="password"
                 value={gateSecret}
                 onChange={(e) => {
                   setGateSecret(e.target.value);
                   localStorage.setItem("gateSecret", e.target.value);
                 }}
-                className="w-full px-4 py-2 bg-black border border-[#1a1a1a] rounded-lg text-white focus:border-[#9AE600] focus:outline-none transition-colors"
+                className="w-full px-4 py-3 bg-black border border-[#1a1a1a] rounded-lg text-white focus:border-[#9AE600] focus:outline-none transition-colors min-h-[44px]"
                 placeholder="Enter gate secret"
               />
             </div>
             <div>
-              <label className="block text-sm text-[#99A1AF] mb-2">Event Filter</label>
-              <select
-                value={selectedEventId}
-                onChange={(e) => setSelectedEventId(e.target.value)}
-                className="w-full px-4 py-2 bg-black border border-[#1a1a1a] rounded-lg text-white focus:border-[#9AE600] focus:outline-none transition-colors"
-              >
-                <option value="">All Events</option>
-                {orderedEvents.map((event) => (
-                  <option key={event.id} value={event.id}>
-                    {getEventDisplayName(event)}
-                  </option>
-                ))}
-              </select>
+              <label htmlFor="eventFilter" className="block text-sm text-[#99A1AF] mb-2">Event Filter</label>
+              <div className="relative">
+                <select
+                  id="eventFilter"
+                  value={selectedEventId}
+                  onChange={(e) => setSelectedEventId(e.target.value)}
+                  className="w-full pl-4 pr-10 py-3 bg-black border border-[#1a1a1a] rounded-lg text-white appearance-none focus:border-[#9AE600] focus:outline-none transition-colors min-h-[44px] truncate"
+                >
+                  <option value="">All Events</option>
+                  {orderedEvents.map((event) => (
+                    <option key={event.id} value={event.id}>
+                      {getEventDisplayName(event)}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#99A1AF] pointer-events-none" />
+              </div>
             </div>
           </div>
         )}
 
         {/* Scan Stats */}
-        <div className="flex gap-4 mb-6">
-          <div className="flex-1 bg-[#0a0a0a] border border-[#1a1a1a] rounded-xl p-4 text-center">
-            <p className="text-3xl font-bold text-[#9AE600]">{scanCount.success}</p>
-            <p className="text-sm text-[#99A1AF]">Verified</p>
+        <div className="flex gap-3 mb-6">
+          <div className="flex-1 bg-[#0a0a0a] border border-[#1a1a1a] rounded-xl p-3 sm:p-4 text-center min-w-0">
+            <p className="text-2xl sm:text-3xl font-bold text-[#9AE600] truncate">{scanCount.success}</p>
+            <p className="text-xs sm:text-sm text-[#99A1AF] truncate">Verified</p>
           </div>
-          <div className="flex-1 bg-[#0a0a0a] border border-[#1a1a1a] rounded-xl p-4 text-center">
-            <p className="text-3xl font-bold text-red-500">{scanCount.failed}</p>
-            <p className="text-sm text-[#99A1AF]">Rejected</p>
+          <div className="flex-1 bg-[#0a0a0a] border border-[#1a1a1a] rounded-xl p-3 sm:p-4 text-center min-w-0">
+            <p className="text-2xl sm:text-3xl font-bold text-red-500 truncate">{scanCount.failed}</p>
+            <p className="text-xs sm:text-sm text-[#99A1AF] truncate">Rejected</p>
           </div>
         </div>
 
         {/* Camera View */}
-        <div className="relative aspect-square bg-[#0a0a0a] rounded-2xl overflow-hidden mb-6 border border-[#1a1a1a]">
+        <div className="relative aspect-[4/3] max-h-[50vh] bg-[#0a0a0a] rounded-2xl overflow-hidden mb-6 border border-[#1a1a1a] flex-shrink-0">
           <video
             ref={videoRef}
             className="absolute inset-0 w-full h-full object-cover"
@@ -443,8 +452,9 @@ export default function ScannerPage() {
               <CameraOff className="w-16 h-16 text-[#99A1AF] mb-4" />
               <p className="text-[#99A1AF] mb-6">Camera not active</p>
               <button
+                type="button"
                 onClick={startCamera}
-                className="px-8 py-4 bg-[#9AE600] text-black rounded-xl hover:bg-[#7bc400] font-semibold flex items-center gap-2 glow-primary transition-all"
+                className="px-8 py-4 bg-[#9AE600] text-black rounded-xl hover:bg-[#7bc400] font-semibold flex items-center gap-2 glow-primary transition-all min-h-[44px]"
               >
                 <Camera className="w-5 h-5" />
                 Start Scanner
@@ -458,26 +468,29 @@ export default function ScannerPage() {
           {scanning ? (
             <>
               <button
+                type="button"
                 onClick={stopCamera}
-                className="flex-1 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 font-semibold flex items-center justify-center gap-2 transition-colors"
+                className="flex-1 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 font-semibold flex items-center justify-center gap-2 transition-colors min-h-[44px]"
               >
                 <CameraOff className="w-5 h-5" />
                 Stop
               </button>
               <button
+                type="button"
                 onClick={() => {
                   setStatus("idle");
                   lastScannedRef.current = "";
                 }}
-                className="py-3 px-4 bg-[#1a1a1a] text-white rounded-xl hover:bg-[#2a2a2a] transition-colors"
+                className="py-3 px-4 bg-[#1a1a1a] text-white rounded-xl hover:bg-[#2a2a2a] transition-colors min-h-[44px]"
               >
                 <RefreshCw className="w-5 h-5" />
               </button>
             </>
           ) : (
             <button
+              type="button"
               onClick={startCamera}
-              className="flex-1 py-4 bg-[#9AE600] text-black rounded-xl hover:bg-[#7bc400] font-semibold flex items-center justify-center gap-2 glow-primary transition-all"
+              className="flex-1 py-4 bg-[#9AE600] text-black rounded-xl hover:bg-[#7bc400] font-semibold flex items-center justify-center gap-2 glow-primary transition-all min-h-[44px]"
             >
               <Camera className="w-5 h-5" />
               Start Scanning
@@ -493,12 +506,12 @@ export default function ScannerPage() {
               type="text"
               value={manualInput}
               onChange={(e) => setManualInput(e.target.value)}
-              className="flex-1 px-4 py-2 bg-black border border-[#1a1a1a] rounded-lg text-white focus:border-[#9AE600] focus:outline-none transition-colors"
+              className="flex-1 px-4 py-3 bg-black border border-[#1a1a1a] rounded-lg text-white focus:border-[#9AE600] focus:outline-none transition-colors min-w-0 min-h-[44px]"
               placeholder="Paste ticket code"
             />
             <button
               type="submit"
-              className="px-4 py-2 bg-[#9AE600] text-black rounded-lg hover:bg-[#7bc400] font-semibold transition-colors"
+              className="px-5 py-3 bg-[#9AE600] text-black rounded-lg hover:bg-[#7bc400] font-semibold transition-colors min-h-[44px] whitespace-nowrap flex-shrink-0"
             >
               Verify
             </button>
