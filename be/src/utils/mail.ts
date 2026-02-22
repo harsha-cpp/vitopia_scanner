@@ -17,11 +17,11 @@ let _logoLoadAttempted = false;
 function getLogoBuffer(): Buffer | null {
   if (_logoLoadAttempted) return _cachedLogoBuffer;
   _logoLoadAttempted = true;
-  const logoPath = path.join(__dirname, "../assets/vitopia.png");
+  const logoPath = path.join(__dirname, "../assets/vitopia-small.png");
   try {
     _cachedLogoBuffer = fs.readFileSync(logoPath);
   } catch (e) {
-    console.warn("Could not read vitopia.png logo for email", e);
+    console.warn("Could not read vitopia-small.png logo for email", e);
   }
   return _cachedLogoBuffer;
 }

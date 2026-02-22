@@ -10,7 +10,7 @@
     "db:migrate:status": "prisma migrate status",
     "db:migrate:deploy": "prisma migrate deploy",
     "db:seed": "tsx scripts/seed.ts",
-    "build": "tsc && mkdir -p dist/src/assets && cp src/assets/vitopia.png dist/src/assets/vitopia.png",
+    "build": "tsc && mkdir -p dist/src/assets && cp src/assets/vitopia*.png dist/src/assets/",
     "start": "node dist/server.js",
     "test": "vitest run"
   },

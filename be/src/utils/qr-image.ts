@@ -5,7 +5,7 @@ import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const LOGO_PATH = join(__dirname, "../assets/vitopia.png");
+const LOGO_PATH = join(__dirname, "../assets/vitopia-small.png");
 
 const BG_COLOR = "#FFFFFF";
 const MODULE_PX = 22;   // pixels per QR module
