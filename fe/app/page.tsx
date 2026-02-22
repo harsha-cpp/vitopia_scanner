@@ -648,6 +648,7 @@ export default function Home() {
               height={75}
               className="h-16 w-auto"
               unoptimized
+              priority
             />
           </div>
         </header>
@@ -666,57 +667,59 @@ export default function Home() {
 
           {!loading && (
             <div className="space-y-5">
-              <div className="relative" ref={dropdownRef}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setDropdownOpen((o) => !o);
-                    setCarnivalDropdownOpen(false);
-                  }}
-                  className="w-full bg-[#0a0a0a] border border-[#1a1a1a] rounded-xl px-4 py-4 text-left flex items-center justify-between focus:outline-none focus:border-[#9AE600]/50 focus:ring-1 focus:ring-[#9AE600]/30 transition-all"
-                >
-                  <span className="text-base text-[#99A1AF]">Prime events</span>
-                  <ChevronDown className={`w-5 h-5 text-[#9AE600] transition-transform ${dropdownOpen ? "rotate-180" : ""}`} />
-                </button>
+              {orderedEvents.filter((ev) => ev.accessToken).length > 0 && (
+                <div className="relative" ref={dropdownRef}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDropdownOpen((o) => !o);
+                      setCarnivalDropdownOpen(false);
+                    }}
+                    className="w-full bg-[#0a0a0a] border border-[#1a1a1a] rounded-xl px-4 py-4 text-left flex items-center justify-between focus:outline-none focus:border-[#9AE600]/50 focus:ring-1 focus:ring-[#9AE600]/30 transition-all"
+                  >
+                    <span className="text-base text-[#99A1AF]">Prime events</span>
+                    <ChevronDown className={`w-5 h-5 text-[#9AE600] transition-transform ${dropdownOpen ? "rotate-180" : ""}`} />
+                  </button>
 
-                {dropdownOpen && (
-                  <div className="absolute z-50 mt-2 w-full bg-[#0a0a0a] border border-[#1a1a1a] rounded-xl overflow-hidden shadow-2xl shadow-black/60">
-                    {orderedEvents
-                      .filter((ev) => ev.accessToken)
-                      .sort((a, b) => {
-                        const enabled = ["DAY_1", "PRANAV"];
-                        const aEnabled = enabled.includes(a.accessToken ?? "");
-                        const bEnabled = enabled.includes(b.accessToken ?? "");
-                        if (aEnabled && !bEnabled) return -1;
-                        if (!aEnabled && bEnabled) return 1;
-                        return 0;
-                      })
-                      .map((event) => {
-                        const enabled = ["DAY_1", "PRANAV"].includes(event.accessToken ?? "");
-                        return (
-                          <button
-                            type="button"
-                            key={event.id}
-                            disabled={!enabled}
-                            onClick={() => {
-                              if (!enabled) return;
-                              setSelectedEvent(event);
-                              setDropdownOpen(false);
-                            }}
-                            className={`w-full px-4 py-3.5 text-left text-sm flex items-center gap-3 border-b border-[#1a1a1a] last:border-b-0 transition-colors ${
-                              enabled
-                                ? "text-white hover:bg-[#9AE600]/10"
-                                : "text-[#555] cursor-not-allowed opacity-40"
-                            }`}
-                          >
-                            <Calendar className={`w-4 h-4 shrink-0 ${enabled ? "text-[#9AE600]" : "text-[#555]"}`} />
-                            <span>{getEventDisplayName(event)}</span>
-                          </button>
-                        );
-                      })}
-                  </div>
-                )}
-              </div>
+                  {dropdownOpen && (
+                    <div className="absolute z-50 mt-2 w-full bg-[#0a0a0a] border border-[#1a1a1a] rounded-xl overflow-hidden shadow-2xl shadow-black/60">
+                      {orderedEvents
+                        .filter((ev) => ev.accessToken)
+                        .sort((a, b) => {
+                          const enabled = ["DAY_1", "PRANAV"];
+                          const aEnabled = enabled.includes(a.accessToken ?? "");
+                          const bEnabled = enabled.includes(b.accessToken ?? "");
+                          if (aEnabled && !bEnabled) return -1;
+                          if (!aEnabled && bEnabled) return 1;
+                          return 0;
+                        })
+                        .map((event) => {
+                          const enabled = ["DAY_1", "PRANAV"].includes(event.accessToken ?? "");
+                          return (
+                            <button
+                              type="button"
+                              key={event.id}
+                              disabled={!enabled}
+                              onClick={() => {
+                                if (!enabled) return;
+                                setSelectedEvent(event);
+                                setDropdownOpen(false);
+                              }}
+                              className={`w-full px-4 py-3.5 text-left text-sm flex items-center gap-3 border-b border-[#1a1a1a] last:border-b-0 transition-colors ${
+                                enabled
+                                  ? "text-white hover:bg-[#9AE600]/10"
+                                  : "text-[#555] cursor-not-allowed opacity-40"
+                              }`}
+                            >
+                              <Calendar className={`w-4 h-4 shrink-0 ${enabled ? "text-[#9AE600]" : "text-[#555]"}`} />
+                              <span>{getEventDisplayName(event)}</span>
+                            </button>
+                          );
+                        })}
+                    </div>
+                  )}
+                </div>
+              )}
 
               {orderedEvents.filter((ev) => ev.accessToken).length === 0 && (
                 <div className="text-center py-10 text-[#99A1AF]">
