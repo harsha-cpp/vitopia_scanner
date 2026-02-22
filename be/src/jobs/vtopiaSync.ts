@@ -185,6 +185,9 @@ export async function syncRegistrations() {
           if (!event) {
              event = await prisma.event.findFirst({ where: { accessToken: "DAY_1" }});
              if (!event) throw new Error("DAY_1 event not found");
+             if (!parsedMeta.tokens.includes("DAY_1")) {
+               parsedMeta.tokens.push("DAY_1");
+             }
           }
 
           const eventIdFromApi = typeof reg.event_id === 'number' ? reg.event_id : parseInt(reg.event_id, 10);
