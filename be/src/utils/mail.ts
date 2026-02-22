@@ -188,7 +188,7 @@ export function buildEmailHtml(data: TicketEmailData): string {
             <td class="padded" style="padding:32px 30px;text-align:center;border-top:1px solid rgba(255,255,255,0.05);background:linear-gradient(180deg, rgba(255,255,255,0.02) 0%, transparent 100%);">
               <p style="margin:0;font-size:13px;color:rgba(255,255,255,0.3);">
                 VIT-AP University · Amaravati, Andhra Pradesh · 522237<br />
-                Questions? Contact <a href="mailto:rishi.23bce8982@vitapstudent.ac.in" style="color:#9AE600;text-decoration:none;word-break:break-all;">rishi.23bce8982@vitapstudent.ac.in</a>
+                Questions? Contact <a href="mailto:chakkaravarthy.sibi@vitap.ac.in" style="color:#9AE600;text-decoration:none;word-break:break-all;">chakkaravarthy.sibi@vitap.ac.in</a> / <a href="mailto:convenor.vitopia@vitap.ac.in" style="color:#9AE600;text-decoration:none;word-break:break-all;">convenor.vitopia@vitap.ac.in</a>
               </p>
             </td>
           </tr>

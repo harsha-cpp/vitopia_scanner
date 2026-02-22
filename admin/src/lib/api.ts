@@ -398,3 +398,57 @@ export async function sendMails(orderIds: string[]): Promise<SendMailsResponse |
   });
   return response.data || null;
 }
+
+const MAIL_BATCH_SIZE = 30;
+
+export interface BatchMailProgress {
+  sent: number;
+  failed: number;
+  total: number;
+  batchIndex: number;
+  totalBatches: number;
+  done: boolean;
+}
+
+export async function sendMailsBatched(
+  orderIds: string[],
+  onProgress: (progress: BatchMailProgress) => void,
+  signal?: AbortSignal
+): Promise<SendMailsResponse> {
+  const totalBatches = Math.ceil(orderIds.length / MAIL_BATCH_SIZE);
+  let totalSent = 0;
+  let totalFailed = 0;
+  const allResults: SendMailResult[] = [];
+
+  for (let i = 0; i < totalBatches; i++) {
+    if (signal?.aborted) break;
+
+    const batch = orderIds.slice(i * MAIL_BATCH_SIZE, (i + 1) * MAIL_BATCH_SIZE);
+    try {
+      const res = await sendMails(batch);
+      if (res) {
+        totalSent += res.sent;
+        totalFailed += res.failed;
+        allResults.push(...res.results);
+      } else {
+        totalFailed += batch.length;
+        allResults.push(...batch.map(id => ({ orderId: id, status: "failed" as const, error: "No response" })));
+      }
+    } catch (err: unknown) {
+      totalFailed += batch.length;
+      const errMsg = err instanceof Error ? err.message : "Network error";
+      allResults.push(...batch.map(id => ({ orderId: id, status: "failed" as const, error: errMsg })));
+    }
+
+    onProgress({
+      sent: totalSent,
+      failed: totalFailed,
+      total: orderIds.length,
+      batchIndex: i + 1,
+      totalBatches,
+      done: i === totalBatches - 1,
+    });
+  }
+
+  return { sent: totalSent, failed: totalFailed, results: allResults };
+}
