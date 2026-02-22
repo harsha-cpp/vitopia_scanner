@@ -4,12 +4,13 @@ import { useEffect, useState, useCallback } from "react";
 import {
   listOrders,
   getEvents,
-  sendMails,
+  sendMailsBatched,
   fetchAllMatchingOrderIds,
   Order,
   Event,
   OrderFilter,
-  SendMailsResponse
+  SendMailsResponse,
+  BatchMailProgress,
 } from "@/lib/api";
 import { format } from "date-fns";
 import {
@@ -66,6 +67,7 @@ export default function SendMailsPage() {
 
   const [isSending, setIsSending] = useState(false);
   const [sendResult, setSendResult] = useState<SendMailsResponse | null>(null);
+  const [batchProgress, setBatchProgress] = useState<BatchMailProgress | null>(null);
 
   useEffect(() => {
     getEvents().then(res => setEvents(res || []));
@@ -145,12 +147,13 @@ export default function SendMailsPage() {
     if (selectedOrderIds.size === 0) return;
     setIsSending(true);
     setSendResult(null);
+    setBatchProgress(null);
     try {
       const orderIdsArray = Array.from(selectedOrderIds);
-      const res = await sendMails(orderIdsArray);
-      if (res) {
-        setSendResult(res);
-      }
+      const res = await sendMailsBatched(orderIdsArray, (progress) => {
+        setBatchProgress(progress);
+      });
+      setSendResult(res);
       setSelectedOrderIds(new Set());
       setIsSelectAll(false);
       await fetchOrders();
@@ -159,6 +162,7 @@ export default function SendMailsPage() {
       alert("Failed to send mails");
     } finally {
       setIsSending(false);
+      setBatchProgress(null);
     }
   };
 
@@ -400,7 +404,27 @@ export default function SendMailsPage() {
           <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-8 max-w-sm w-full text-center shadow-2xl">
             <Loader2 className="w-12 h-12 animate-spin text-primary mx-auto mb-4" />
             <h3 className="text-xl font-heading text-white tracking-wider mb-2">SENDING MAILS</h3>
-            <p className="text-zinc-400 text-sm">Processing {selectedOrderIds.size} orders...</p>
+            {batchProgress ? (
+              <div className="space-y-3">
+                <div className="w-full bg-zinc-800 rounded-full h-2 overflow-hidden">
+                  <div
+                    className="bg-[#9AE600] h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${Math.round(((batchProgress.sent + batchProgress.failed) / batchProgress.total) * 100)}%` }}
+                  />
+                </div>
+                <div className="flex items-center justify-center gap-4 text-sm">
+                  <span className="text-[#9AE600] font-medium">{batchProgress.sent} sent</span>
+                  {batchProgress.failed > 0 && (
+                    <span className="text-red-400 font-medium">{batchProgress.failed} failed</span>
+                  )}
+                </div>
+                <p className="text-zinc-500 text-xs">
+                  Batch {batchProgress.batchIndex} / {batchProgress.totalBatches} · {batchProgress.total} total
+                </p>
+              </div>
+            ) : (
+              <p className="text-zinc-400 text-sm">Preparing...</p>
+            )}
           </div>
         </div>
       )}
