@@ -1,6 +1,5 @@
 import { Router, Request, Response } from "express";
-import { sendTicketEmail } from "../utils/mail.js";
-import * as ordersRepo from "../db/orders.js";
+import { sendTicketEmailsBatch } from "../utils/mail.js";
 
 const router: Router = Router();
 
@@ -12,16 +11,7 @@ router.post("/send", async (req: Request, res: Response) => {
     return;
   }
 
-  const results: { orderId: string; status: "sent" | "failed"; error?: string }[] = [];
-
-  for (const orderId of orderIds) {
-    try {
-      await sendTicketEmail(orderId);
-      results.push({ orderId, status: "sent" });
-    } catch (err: any) {
-      results.push({ orderId, status: "failed", error: err.message || "Unknown error" });
-    }
-  }
+  const results = await sendTicketEmailsBatch(orderIds);
 
   const sent = results.filter((r) => r.status === "sent").length;
   const failed = results.filter((r) => r.status === "failed").length;

@@ -204,6 +204,109 @@ export function buildEmailHtml(data: TicketEmailData): string {
 </html>`.trim();
 }
 
+export async function prepareTicketEmailPayload(orderId: string, emailOverride?: string) {
+  const order = await ordersRepo.getByOrderId(orderId);
+  if (!order) {
+    throw new Error(`Order not found: ${orderId}`);
+  }
+
+  const recipientEmail = emailOverride || order.user?.email || "";
+  if (!recipientEmail) {
+    throw new Error(`No recipient email for order: ${orderId}`);
+  }
+
+  const eventDate = order.event?.date ? new Date(Number(order.event.date)) : new Date();
+  const formattedDate = eventDate.toLocaleDateString("en-IN", {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+
+  const qrToken = generateQRCode({ orderId: order.orderId });
+  const qrBuffer = await generateStyledQRImage(qrToken);
+  const logoBuffer = getLogoBuffer();
+
+  const attachments: any[] = [
+    {
+      filename: "ticket.png",
+      content: qrBuffer,
+      contentType: "image/png",
+      contentId: "qrcode",
+      contentDisposition: "inline",
+    },
+  ];
+
+  if (logoBuffer) {
+    attachments.push({
+      filename: "logo.png",
+      content: logoBuffer,
+      contentType: "image/png",
+      contentId: "logo",
+      contentDisposition: "inline",
+    });
+  }
+
+  return {
+    from: FROM_EMAIL,
+    to: [recipientEmail],
+    subject: `Your VITopia '26 Ticket — ${order.event?.name || "Event"}`,
+    html: buildEmailHtml({
+      name: order.user?.name || "Attendee",
+      orderId: order.orderId,
+      eventName: order.event?.name || "Event",
+      quantity: order.quantity,
+      date: formattedDate,
+      venue: order.event?.venue || "VIT-AP Campus",
+      email: recipientEmail,
+    }),
+    attachments,
+  };
+}
+
+export async function sendTicketEmailsBatch(orderIds: string[]) {
+  if (!process.env.RESEND_API_KEY) {
+    throw new Error("RESEND_API_KEY is not configured");
+  }
+
+  const results: { orderId: string; status: "sent" | "failed"; error?: string }[] = [];
+  const payloads: any[] = [];
+  const validOrderIds: string[] = [];
+
+  await Promise.all(orderIds.map(async (orderId) => {
+    try {
+      const payload = await prepareTicketEmailPayload(orderId);
+      payloads.push(payload);
+      validOrderIds.push(orderId);
+    } catch (err: any) {
+      results.push({ orderId, status: "failed", error: err.message });
+    }
+  }));
+
+  if (payloads.length === 0) return results;
+
+  const CHUNK_SIZE = 100;
+  for (let i = 0; i < payloads.length; i += CHUNK_SIZE) {
+    const chunkPayloads = payloads.slice(i, i + CHUNK_SIZE);
+    const chunkOrderIds = validOrderIds.slice(i, i + CHUNK_SIZE);
+
+    const { data, error } = await getResend().batch.send(chunkPayloads);
+
+    if (error) {
+      for (const id of chunkOrderIds) {
+        results.push({ orderId: id, status: "failed", error: error.message });
+      }
+    } else {
+      for (const id of chunkOrderIds) {
+        results.push({ orderId: id, status: "sent" });
+      }
+      await Promise.all(chunkOrderIds.map(id => ordersRepo.updateOrder(id, { mailed: true })));
+    }
+  }
+
+  return results;
+}
+
 /**
  * Sends a ticket email to the user for a specific order.
  * @param orderId Internal order ID

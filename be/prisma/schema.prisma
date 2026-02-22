@@ -65,7 +65,6 @@ model Event {
 
   orders   Order[]
   scanLogs ScanLog[]
-  gates    Gate[]
 
   @@index([isActive])
   @@index([date])
@@ -140,12 +139,8 @@ model Gate {
   name      String
   secret    String  @default("v2026")
   gender    String  @default("M") // M or F
-  eventId   String  @map("event_id") @db.Uuid
   isActive  Boolean @map("is_active")
   createdAt BigInt  @map("created_at")
 
-  event Event @relation(fields: [eventId], references: [id])
-
-  @@index([eventId])
   @@map("gates")
 }
