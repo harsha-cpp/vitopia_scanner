@@ -683,20 +683,37 @@ export default function Home() {
                   <div className="absolute z-50 mt-2 w-full bg-[#0a0a0a] border border-[#1a1a1a] rounded-xl overflow-hidden shadow-2xl shadow-black/60">
                     {orderedEvents
                       .filter((ev) => ev.accessToken)
-                      .map((event) => (
-                        <button
-                          type="button"
-                          key={event.id}
-                          onClick={() => {
-                            setSelectedEvent(event);
-                            setDropdownOpen(false);
-                          }}
-                          className="w-full px-4 py-3.5 text-left text-sm text-white hover:bg-[#9AE600]/10 transition-colors flex items-center gap-3 border-b border-[#1a1a1a] last:border-b-0"
-                        >
-                          <Calendar className="w-4 h-4 text-[#9AE600] shrink-0" />
-                          <span>{getEventDisplayName(event)}</span>
-                        </button>
-                      ))}
+                      .sort((a, b) => {
+                        const enabled = ["DAY_1", "PRANAV"];
+                        const aEnabled = enabled.includes(a.accessToken ?? "");
+                        const bEnabled = enabled.includes(b.accessToken ?? "");
+                        if (aEnabled && !bEnabled) return -1;
+                        if (!aEnabled && bEnabled) return 1;
+                        return 0;
+                      })
+                      .map((event) => {
+                        const enabled = ["DAY_1", "PRANAV"].includes(event.accessToken ?? "");
+                        return (
+                          <button
+                            type="button"
+                            key={event.id}
+                            disabled={!enabled}
+                            onClick={() => {
+                              if (!enabled) return;
+                              setSelectedEvent(event);
+                              setDropdownOpen(false);
+                            }}
+                            className={`w-full px-4 py-3.5 text-left text-sm flex items-center gap-3 border-b border-[#1a1a1a] last:border-b-0 transition-colors ${
+                              enabled
+                                ? "text-white hover:bg-[#9AE600]/10"
+                                : "text-[#555] cursor-not-allowed opacity-40"
+                            }`}
+                          >
+                            <Calendar className={`w-4 h-4 shrink-0 ${enabled ? "text-[#9AE600]" : "text-[#555]"}`} />
+                            <span>{getEventDisplayName(event)}</span>
+                          </button>
+                        );
+                      })}
                   </div>
                 )}
               </div>
